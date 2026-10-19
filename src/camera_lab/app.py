@@ -10,11 +10,13 @@ from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QGridLayout, QLabel, QPushButton, QCheckBox, QHBoxLayout,
-                               QFileDialog, QInputDialog, QDialog)
+                               QFileDialog, QInputDialog, QDialog, QDockWidget)
 from .render.worker import RenderSession, LatestBatch
 from .metrics import Measurement, environment
 from .project.importer import SceneProject
 from .ui.import_dialog import PlacementDialog
+from .ui.editor import Editor
+from .ui.preview import PreviewPanel
 
 
 class Worker(Thread):
@@ -43,6 +45,7 @@ class Worker(Thread):
                 self.events.put({'ok':False,'message':f'{exc}\nShowing demo scene; choose Open to retry.'})
             session = RenderSession(self.width,self.height,project=project)
             self.gl_renderer = session.gl_renderer
+            self.events.put({'scene':session.scene_description()})
             running = self.initial_model is None
             target_time = 0.0
             previous = perf_counter()
@@ -57,6 +60,8 @@ class Worker(Thread):
                     if command == 'running':
                         running = payload
                         delta = 0
+                    elif command == 'frustums':
+                        session.show_frustums=payload
                     elif command == 'reset':
                         session.reset()
                         target_time = 0.0
@@ -65,6 +70,19 @@ class Worker(Thread):
                         session.orbit(*payload)
                     elif command == 'zoom':
                         session.zoom(payload)
+                    elif command in ('edit_body','edit_camera','aim_camera','move_camera'):
+                        running = False
+                        delta = 0
+                        try:
+                            if command == 'aim_camera':
+                                bid=next(bid for bid,n in session._body_names.items() if n==payload['target'])
+                                session.aim_camera(payload['name'],session.data.xpos[bid].copy())
+                            else:
+                                getattr(session,command)(**payload)
+                            target_time=float(session.data.time)
+                            self.events.put({'scene':session.scene_description(),'edit_message':'Applied; simulation paused.'})
+                        except Exception as exc:
+                            self.events.put({'scene':session.scene_description(),'edit_message':str(exc)})
                     elif command == 'model':
                         running = False
                         delta = 0
@@ -75,12 +93,12 @@ class Worker(Thread):
                                                            payload['quaternion'],payload['packages'])
                             else:
                                 candidate = SceneProject.open(payload['path'],payload['packages'],
-                                                              revision=project.revision+1)
+                                                              revision=session.model_revision+1)
                             replacement = RenderSession(self.width,self.height,project=candidate)
                             if payload['append']:
-                                for name in session.cameras:
-                                    if name in replacement.cameras:
-                                        replacement.configure_camera(name,session.camera_config(name))
+                                session.copy_edits_to(replacement)
+                                replacement.model_revision=session.model_revision+1
+                            replacement.show_frustums=session.show_frustums
                             preview = replacement.capture()
                         except Exception as exc:
                             if replacement is not None:
@@ -96,6 +114,7 @@ class Worker(Thread):
                             if candidate.warnings:
                                 message += '\n'+'\n'.join(candidate.warnings)
                             self.events.put({'ok':True,'message':message})
+                            self.events.put({'scene':session.scene_description()})
                         previous = perf_counter()
                 before_step = session.data.time
                 if running:
@@ -205,7 +224,9 @@ class Window(QMainWindow):
         reset = QPushButton('Reset scene')
         reset.clicked.connect(lambda: self.send('reset', None))
         self.depth = QCheckBox('Show depth · 0–5 m')
-        for widget in (self.running, reset, self.depth):
+        frustums=QCheckBox('Camera frustums')
+        frustums.toggled.connect(lambda value:self.send('frustums',value))
+        for widget in (self.running, reset, self.depth, frustums):
             controls.addWidget(widget)
         controls.addStretch()
         controls.addWidget(QLabel(f'3 cameras · {width} × {height} · target {fps:g} FPS'))
@@ -214,24 +235,35 @@ class Window(QMainWindow):
         self.overview = View(interactive=True)
         self.overview.orbit.connect(lambda x, y: self.send('orbit', (x, y)))
         self.overview.zoom.connect(lambda value: self.send('zoom', value))
-        self.camera_views = [View() for _ in range(3)]
+        self.camera_views = [View(interactive=True) for _ in range(3)]
+        for index,view in enumerate(self.camera_views):
+            view.orbit.connect(lambda x,y,i=index:self.drag_camera(i,x,y))
+            view.zoom.connect(lambda value,i=index:self.drag_camera(i,0,0,value))
         self.camera_labels = []
+        self.camera_panels = []
+        self.preview_panels = []
         for index, (name, view) in enumerate(zip(
-                ('GLOBAL · drag to orbit / scroll to zoom', 'CAM 01 · FRONT', 'CAM 02 · SIDE', 'CAM 03 · TOP'),
+                ('GLOBAL · drag to orbit / scroll to zoom', 'CAM 01', 'CAM 02', 'CAM 03'),
                 (self.overview, *self.camera_views))):
-            panel = QWidget()
-            panel_layout = QVBoxLayout(panel)
-            label = QLabel(name)
-            panel_layout.addWidget(label)
+            label=QLabel(name)
+            panel=PreviewPanel(label,view)
+            self.preview_panels.append(panel)
             if index:
                 self.camera_labels.append(label)
-            panel_layout.addWidget(view, 1)
-            grid.addWidget(panel, index // 2, index % 2)
+                self.camera_panels.append(panel)
+            grid.addWidget(panel,index//2,index%2)
         layout.addLayout(grid, 1)
         self.status = QLabel('Initializing OpenGL on render worker…')
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
         self.setCentralWidget(root)
+        self.editor=Editor()
+        self.editor.command.connect(self.edit)
+        dock=QDockWidget('Scene properties',self)
+        dock.setWidget(self.editor)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea,dock)
+        dock.setMinimumWidth(270)
+        self.resize(1550,950)
         self.setStyleSheet('QMainWindow,QWidget {background:#1a2330; color:#dce7f4;} '
                           'QPushButton {padding:8px; background:#34465c; border-radius:4px;} '
                           'QPushButton:checked {background:#216e58;}')
@@ -239,6 +271,14 @@ class Window(QMainWindow):
         self.timer.timeout.connect(self.poll)
         self.timer.start(5)
         self.worker.start()
+
+    def edit(self,command,payload):
+        self.running.setChecked(False)
+        self.send(command,payload)
+
+    def drag_camera(self,index,dx,dy,steps=0):
+        if self.last_batch:
+            self.edit('move_camera',dict(name=self.last_batch.frames[index].camera_id,dx=dx,dy=dy,steps=steps))
 
     def choose_model(self, append):
         path,_ = QFileDialog.getOpenFileName(self,'Select MJCF or URDF','','Models (*.xml *.urdf);;All files (*)')
@@ -294,6 +334,10 @@ class Window(QMainWindow):
                 notice = self.worker.events.get_nowait()
             except Empty:
                 break
+            if 'scene' in notice:
+                self.editor.update_scene(notice['scene'])
+                if 'edit_message' in notice:self.import_status.setText(notice['edit_message'])
+                continue
             self.import_status.setText(notice['message'])
             self.open_model.setEnabled(not bool(self.seconds))
             self.append_model.setEnabled(not bool(self.seconds))
@@ -340,6 +384,8 @@ class Window(QMainWindow):
             self._closing = True
             event.ignore()
             return
+        for panel in self.preview_panels:
+            if panel.dialog is not None:panel.dialog.close()
         self.timer.stop()
         if self.report and not self.saved_report:
             elapsed = self.measure_end - self.measure_start if self.measure_start is not None else 0

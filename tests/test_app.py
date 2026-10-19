@@ -86,3 +86,37 @@ def test_initial_import_failure_can_retry(tmp_path):
         window.close()
         wait_until(lambda:not window.worker.is_alive())
         app.processEvents()
+
+
+def test_editor_changes_camera_and_detaches_preview():
+    app=QApplication.instance() or QApplication([])
+    window=Window(width=160,height=90)
+    window.show()
+    def wait_until(predicate):
+        until=time.monotonic()+15
+        while not predicate() and time.monotonic()<until:
+            app.processEvents();time.sleep(.01)
+        assert predicate(),window.worker.error
+    try:
+        wait_until(lambda:window.last_batch is not None and window.editor.description is not None)
+        item=window.editor.tree.topLevelItem(1).child(0)
+        window.editor.tree.setCurrentItem(item)
+        window.editor.values['width'].setValue(200)
+        window.editor.values['height'].setValue(100)
+        window.editor.apply.click()
+        wait_until(lambda:window.last_batch.frames[0].rgb.shape==(100,200,3))
+        assert not window.running.isChecked()
+        panel=window.camera_panels[0]
+        panel.detach()
+        assert panel.dialog.isVisible()
+        sequence=window.last_batch.sequence
+        wait_until(lambda:window.last_batch.sequence>sequence)
+        panel.dialog.close()
+        assert window.camera_views[0].parent() is panel
+        panel.detach()
+        floating=panel.dialog
+    finally:
+        window.close()
+        wait_until(lambda:not window.worker.is_alive())
+        app.processEvents()
+    assert not floating.isVisible()

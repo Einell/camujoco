@@ -16,6 +16,7 @@ import numpy as np
 from ..contracts import CameraConfig, CameraFrame, FrameStamp, ObservationBatch, GroundTruthBatch
 from ..coordinates import camera_world_pose, world_pose
 from .camera import read_config, apply_intrinsics, clipping
+from .editing import Editing
 
 
 class LatestBatch:
@@ -37,11 +38,14 @@ class LatestBatch:
             return value
 
 
-class RenderSession:
+class RenderSession(Editing):
     def __init__(self, width=1280, height=720, camera_count=3, xml=None, cameras=None, project=None):
         if width <= 0 or height <= 0 or camera_count not in (1, 2, 3):
             raise ValueError('Positive dimensions and 1–3 cameras are required')
         self._owner = get_ident()
+        self._body_edits = {}
+        self._camera_edits = set()
+        self.show_frustums = False
         if project is not None and (xml is not None or cameras is not None):
             raise ValueError('project cannot be combined with xml or cameras')
         self.project = project
@@ -171,6 +175,8 @@ class RenderSession:
                            self.step_index, float(self.data.time), monotonic_ns())
         self.renderer.disable_depth_rendering()
         self.renderer.update_scene(self.data, camera=self.view)
+        if self.show_frustums:
+            self.draw_frustums()
         overview = self.renderer.render()
         overview.setflags(write=False)
         frames = []
