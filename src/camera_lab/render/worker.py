@@ -38,12 +38,19 @@ class LatestBatch:
 
 
 class RenderSession:
-    def __init__(self, width=1280, height=720, camera_count=3, xml=None, cameras=None):
+    def __init__(self, width=1280, height=720, camera_count=3, xml=None, cameras=None, project=None):
         if width <= 0 or height <= 0 or camera_count not in (1, 2, 3):
             raise ValueError('Positive dimensions and 1–3 cameras are required')
         self._owner = get_ident()
-        self.model = mujoco.MjModel.from_xml_string(
-            xml if xml is not None else files('camera_lab').joinpath('demo.xml').read_text())
+        if project is not None and (xml is not None or cameras is not None):
+            raise ValueError('project cannot be combined with xml or cameras')
+        self.project = project
+        self._demo_motion = project.demo_motion if project is not None else xml is None
+        self.model = (project.spec.compile() if project is not None else
+                      mujoco.MjModel.from_xml_string(xml if xml is not None else
+                      files('camera_lab').joinpath('demo.xml').read_text()))
+        if project is not None:
+            cameras = project.cameras
         self.model.vis.global_.offwidth = max(width, self.model.vis.global_.offwidth)
         self.model.vis.global_.offheight = max(height, self.model.vis.global_.offheight)
         self.cameras = tuple(('front', 'side', 'top')[:camera_count] if cameras is None else cameras)
@@ -76,6 +83,9 @@ class RenderSession:
         mujoco.mjv_defaultCamera(self.view)
         self.view.lookat[:] = [0, 0, .8]
         self.view.distance = 4
+        if project is not None:
+            self.view.lookat[:] = self.model.stat.center
+            self.view.distance = max(float(self.model.stat.extent)*2, 1)
         self.view.azimuth = 125
         self.view.elevation = -25
         self.renderer = mujoco.Renderer(self.model, height=height, width=width)
@@ -84,7 +94,7 @@ class RenderSession:
         self._renderers = {(width,height): self.renderer}
         self._overview_size = (width,height)
         self.run_id = str(uuid4())
-        self.model_revision = 0
+        self.model_revision = project.revision if project is not None else 0
         self.step_index = 0
         self.sequence = 0
         self.closed = False
@@ -98,7 +108,7 @@ class RenderSession:
     def advance_to(self, sim_time):
         self._check()
         while self.data.time + 1e-12 < sim_time:
-            if self.model.nu:
+            if self._demo_motion and self.model.nu:
                 self.data.ctrl[0] = .6 * math.sin(2 * math.pi * .6 * self.data.time)
             mujoco.mj_step(self.model, self.data)
             self.step_index += 1

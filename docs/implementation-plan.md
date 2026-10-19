@@ -145,11 +145,11 @@ benchmarks/three_cameras.py       性能基准与报告
 
 文件：project/importer.py、project/assets.py、tests/test_importer.py、tests/fixtures/。
 
-- [ ] 编写独立 MJCF、带 visual/collision 的 URDF、嵌套 include、重名资源、缺失网格和 package:// 测试模型。
-- [ ] 实现完整打开及追加，处理根部位姿、freejoint 初态、对象命名空间和资源目录。
-- [ ] 对不能保真的全局配置、外部插件依赖或执行器引用冲突返回具体诊断；原场景保持有效。
-- [ ] 验证重复追加同一机器人两次仍能分别取得 body 位姿；失败导入不改变当前模型版本。
-- [ ] 运行 `pytest tests/test_importer.py -v`，通过后提交该交付物。
+- [x] 编写独立 MJCF、带 visual/collision 的 URDF、嵌套 include、重名资源、缺失网格和 package:// 测试模型。
+- [x] 实现完整打开及追加，处理根部位姿、freejoint 初态、对象命名空间和资源目录。
+- [x] 对不能保真的全局配置、外部插件依赖或执行器引用冲突返回具体诊断；原场景保持有效。
+- [x] 验证重复追加同一机器人两次仍能分别取得 body 位姿；失败导入不改变当前模型版本。
+- [x] 运行 `pytest tests/test_importer.py -v`，通过后提交该交付物。
 
 ### 任务 4 静态编辑与多相机桌面界面
 
@@ -229,3 +229,5 @@ benchmarks/three_cameras.py       性能基准与报告
 2026-10-19：已交付 outputs/camera-lab 渲染基线。当前实际硬件为 RTX 4060 Laptop，桌面 60 秒测试每路 29.85 FPS，渲染 P95 22.90 ms。任务 1 中针对 RTX 5060 的验收仍未完成；其余功能任务尚未执行。详细记录见 camera-lab/reports/verification.md。
 
 2026-10-19：任务 2 已实现。增加相机内参/独立分辨率与裁剪接口、光学坐标转换、同步采样标识及独立真值批次；包含实际渲染投影测试和样本导出脚本。相机挂载沿用导入模型已有的父 body，编辑挂载关系属于任务 4。PoseEstimate 与 ControlCommand 的运行时接入仍按任务 7 实现。
+
+2026-10-19：任务 3 已实现 MJCF/URDF 打开、追加、资源映射、唯一命名及桌面导入入口。支持追加位姿设置，失败保留有效场景；启动文件错误可回退后重新打开。使用内联测试夹具及 examples/models 示例覆盖资源和引用行为。
