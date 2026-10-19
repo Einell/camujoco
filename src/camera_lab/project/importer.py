@@ -37,11 +37,18 @@ def load_spec(path, packages):
         warnings.append('URDF visuals and fixed links retained; no actuators generated automatically.')
     elif root.tag=='mujoco':
         spec=mujoco.MjSpec.from_file(str(path))
-        for collection in (spec.meshes,spec.textures,spec.hfields,spec.skins):
+        strip=spec.strippath
+        def resource(value,directory):
+            if strip and '://' not in value:value=value.replace(chr(92),'/').rsplit('/',1)[-1]
+            return resolve_resource(value,path.parent/Path(directory),packages)
+        for collection,directory in ((spec.meshes,spec.compiler.meshdir),(spec.textures,spec.compiler.texturedir),
+                                     (spec.hfields,spec.compiler.meshdir),(spec.skins,spec.compiler.meshdir)):
             for asset in collection:
-                value=getattr(asset,'file','')
-                if '://' in value:
-                    asset.file=resolve_resource(value,path.parent,packages)
+                if asset.file:
+                    asset.file=resource(asset.file,directory)
+                if hasattr(asset,'cubefiles'):
+                    asset.cubefiles=[resource(f,directory) if f else '' for f in asset.cubefiles]
+        spec.strippath=False
     else:
         raise ValueError(f'Expected <mujoco> or <robot>, got <{root.tag}>')
     # Preserve stable body identities while combining multiple models.
@@ -89,6 +96,7 @@ class SceneProject:
     source: str=''
     demo_motion: bool=False
     next_instance: int=1
+    saved_state: dict | None=None
 
     @classmethod
     def demo(cls):

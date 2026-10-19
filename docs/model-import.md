@@ -8,7 +8,7 @@
 ./run.sh --model examples/models/table.xml
 ```
 
-随后追加 examples/models/simple_robot.urdf，设置 Z=0.75，即可将机器人放在桌面上。运行复选框控制暂停/继续；Reset 恢复初态。对象位姿和相机参数可通过左侧属性面板编辑，见 [编辑操作](scene-editor.md)；项目保存将在后续步骤实现。
+随后追加 examples/models/simple_robot.urdf，设置 Z=0.75，即可将机器人放在桌面上。运行复选框控制暂停/继续；Reset 恢复初态。对象位姿和相机参数可通过左侧属性面板编辑，见 [编辑操作](scene-editor.md)；项目保存见 [项目文件说明](project-storage.md)。
 
 ## 资源与模型语义
 

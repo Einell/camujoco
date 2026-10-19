@@ -6,7 +6,7 @@ from queue import Queue, Empty, SimpleQueue
 from threading import Thread, Event
 from time import perf_counter, process_time
 import numpy as np
-from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtCore import Qt, QTimer, Signal, QByteArray
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QGridLayout, QLabel, QPushButton, QCheckBox, QHBoxLayout,
@@ -18,6 +18,7 @@ from .ui.import_dialog import PlacementDialog
 from .ui.editor import Editor
 from .ui.preview import PreviewPanel
 from .sim.engine import Simulation,Mode
+from .project.store import save_project,load_project
 
 
 class Worker(Thread):
@@ -92,23 +93,36 @@ class Worker(Thread):
                             self.events.put({'scene':session.scene_description(),'edit_message':'Applied; simulation paused.'})
                         except Exception as exc:
                             self.events.put({'scene':session.scene_description(),'edit_message':str(exc)})
-                    elif command == 'model':
+                    elif command == 'save_project':
+                        simulation.transition('pause')
+                        delta=0
+                        self.events.put({'mode':simulation.mode.value})
+                        try:
+                            save_project(session,payload['path'],payload['layout'])
+                            message='Saved project '+payload['path']
+                        except Exception as exc:
+                            message='Save failed: '+str(exc)
+                        self.events.put({'storage_message':message})
+                        previous=perf_counter()
+                    elif command in ('model','open_project'):
                         simulation.transition('pause')
                         self.events.put({'mode':simulation.mode.value})
                         delta = 0
                         replacement = None
                         try:
-                            if payload['append']:
+                            if command=='open_project':
+                                candidate,layout=load_project(payload['path'],revision=session.model_revision+1)
+                            elif payload['append']:
                                 candidate = project.append(payload['path'],payload['position'],
                                                            payload['quaternion'],payload['packages'])
                             else:
                                 candidate = SceneProject.open(payload['path'],payload['packages'],
                                                               revision=session.model_revision+1)
                             replacement = RenderSession(self.width,self.height,project=candidate)
-                            if payload['append']:
+                            if command=='model' and payload['append']:
                                 session.copy_edits_to(replacement)
                                 replacement.model_revision=session.model_revision+1
-                            replacement.show_frustums=session.show_frustums
+                            if command=='model':replacement.show_frustums=session.show_frustums
                             preview = replacement.capture()
                         except Exception as exc:
                             if replacement is not None:
@@ -126,6 +140,7 @@ class Worker(Thread):
                                 message += '\n'+'\n'.join(candidate.warnings)
                             self.events.put({'ok':True,'message':message})
                             self.events.put({'scene':session.scene_description()})
+                            if command=='open_project':self.events.put({'layout':layout,'frustums':session.show_frustums})
                         previous = perf_counter()
                 before_step = session.data.time
                 simulation.advance(delta)
@@ -220,6 +235,14 @@ class Window(QMainWindow):
         for button in (self.open_model,self.append_model,self.map_package):
             file_controls.addWidget(button)
             button.setEnabled(not bool(seconds))
+        self.save_project_button=QPushButton('Save project')
+        self.open_project_button=QPushButton('Open project')
+        self.save_project_button.clicked.connect(self.choose_save_project)
+        self.open_project_button.clicked.connect(self.choose_open_project)
+        file_controls.addWidget(self.save_project_button)
+        file_controls.addWidget(self.open_project_button)
+        self.save_project_button.setEnabled(not bool(seconds))
+        self.open_project_button.setEnabled(not bool(seconds))
         file_controls.addStretch()
         layout.addLayout(file_controls)
         self.import_status = QLabel('Open replaces the scene; append adds a model at a specified pose. Imports pause simulation.')
@@ -240,6 +263,7 @@ class Window(QMainWindow):
             button.clicked.connect(lambda checked=False,c=command:self.send(c,None))
         self.depth = QCheckBox('Show depth · 0–5 m')
         frustums=QCheckBox('Camera frustums')
+        self.frustums=frustums
         frustums.toggled.connect(lambda value:self.send('frustums',value))
         for widget in (self.running, reset, self.step, self.return_edit, self.save_initial):
             controls.addWidget(widget)
@@ -281,6 +305,7 @@ class Window(QMainWindow):
         self.editor=Editor()
         self.editor.command.connect(self.edit)
         dock=QDockWidget('Scene properties',self)
+        dock.setObjectName('scene-properties')
         dock.setWidget(self.editor)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea,dock)
         dock.setMinimumWidth(270)
@@ -292,6 +317,37 @@ class Window(QMainWindow):
         self.timer.timeout.connect(self.poll)
         self.timer.start(5)
         self.worker.start()
+
+    def project_layout(self):
+        return dict(depth=self.depth.isChecked(),geometry=bytes(self.saveGeometry().toBase64()).decode(),
+                    docks=bytes(self.saveState().toBase64()).decode(),
+                    floating=[bytes(p.dialog.saveGeometry().toBase64()).decode() if p.dialog else None
+                              for p in self.preview_panels])
+
+    def apply_layout(self,layout):
+        self.depth.setChecked(bool(layout.get('depth',False)))
+        if layout.get('geometry'):self.restoreGeometry(QByteArray.fromBase64(layout['geometry'].encode()))
+        if layout.get('docks'):self.restoreState(QByteArray.fromBase64(layout['docks'].encode()))
+        for panel,geometry in zip(self.preview_panels,layout.get('floating',[None]*4)):
+            if panel.dialog:panel.dialog.close()
+            if geometry:
+                panel.detach()
+                panel.dialog.restoreGeometry(QByteArray.fromBase64(geometry.encode()))
+
+    def choose_save_project(self):
+        path,_=QFileDialog.getSaveFileName(self,'Save project','','Camera Lab project (*.camproj)')
+        if path:self.request_save_project(path if path.endswith('.camproj') else path+'.camproj')
+
+    def choose_open_project(self):
+        path,_=QFileDialog.getOpenFileName(self,'Open project','','Camera Lab project (*.camproj)')
+        if path:self.request_open_project(path)
+
+    def request_save_project(self,path):
+        self.send('save_project',dict(path=str(path),layout=self.project_layout()))
+
+    def request_open_project(self,path):
+        if self.send('open_project',dict(path=str(path))):
+            self.import_status.setText('Opening project '+str(path))
 
     def edit(self,command,payload):
         self.running.setChecked(False)
@@ -355,6 +411,15 @@ class Window(QMainWindow):
                 notice = self.worker.events.get_nowait()
             except Empty:
                 break
+            if 'storage_message' in notice:
+                self.import_status.setText(notice['storage_message'])
+                continue
+            if 'layout' in notice:
+                self.apply_layout(notice['layout'])
+                self.frustums.blockSignals(True)
+                self.frustums.setChecked(notice['frustums'])
+                self.frustums.blockSignals(False)
+                continue
             if 'mode' in notice:
                 self.mode.setText('Mode: '+notice['mode'])
                 self.running.blockSignals(True)

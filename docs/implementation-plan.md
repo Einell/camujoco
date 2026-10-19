@@ -177,10 +177,10 @@ benchmarks/three_cameras.py       性能基准与报告
 
 文件：project/store.py、tests/test_project_roundtrip.py。
 
-- [ ] 实现规范化 MJCF、资源归档、项目 schema_version、稳定 ID、相机配置、初态和布局保存。
-- [ ] 将保存的项目复制到新目录并移除测试用原资源目录，重新打开并比较场景、相机参数及对象身份。
-- [ ] 模拟写入失败，验证旧项目仍能打开；未知 schema_version 给出明确错误。
-- [ ] 运行 `pytest tests/test_project_roundtrip.py -v`，通过后提交该交付物。
+- [x] 实现规范化 MJCF、资源归档、项目 schema_version、稳定 ID、相机配置、初态和布局保存。
+- [x] 将保存的项目复制到新目录并移除测试用原资源目录，重新打开并比较场景、相机参数及对象身份。
+- [x] 模拟写入失败，验证旧项目仍能打开；未知 schema_version 给出明确错误。
+- [x] 运行 `pytest tests/test_project_roundtrip.py -v`，通过后提交该交付物。
 
 ### 任务 7 数据接口和机器人控制接口
 
@@ -236,3 +236,5 @@ benchmarks/three_cameras.py       性能基准与报告
 2026-10-19：任务 4 实现场景树、body 初态与光学相机属性编辑、世界固定/物体挂载、对准目标、画面拖动平移、视场线框和可浮动预览。位姿采用 wxyz 四元数；完整状态迁移与保存按任务 5/6 继续。
 
 2026-10-19：任务 5 本地实现显式模式、单步、恢复编辑初态、保存关节/mocap姿态为初态及完整积分内存快照。重试后完成软件/GPU 验证与独立复核；修复 mocap 编辑与独立初态不同步的问题，完整测试增至 53 项。
+
+2026-10-19：任务 6 实现 .camproj ZIP 项目包，内部为 project.json、scene.xml 和 assets/。使用临时文件及原子替换；保存初态/相机/布局，迁移后无需原资源目录。基础MJCF与编辑覆盖分开保存；动态求解器快照不持久化。

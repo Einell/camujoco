@@ -105,6 +105,13 @@ class RenderSession(Editing):
         self.step_index = 0
         self.sequence = 0
         self.closed = False
+        if project is not None and project.saved_state is not None:
+            try:
+                from ..project.store import restore_state
+                restore_state(self,project.saved_state)
+            except Exception:
+                self.close()
+                raise
 
     def _check(self):
         if get_ident() != self._owner:

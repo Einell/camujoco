@@ -150,3 +150,36 @@ def test_simulation_buttons_step_save_and_return_to_edit():
         window.close()
         wait_until(lambda:not window.worker.is_alive())
         app.processEvents()
+
+
+def test_save_and_open_project_restores_ui_and_paused_scene(tmp_path):
+    app=QApplication.instance() or QApplication([])
+    window=Window(width=160,height=90)
+    window.show()
+    def wait_until(predicate):
+        until=time.monotonic()+15
+        while not predicate() and time.monotonic()<until:
+            app.processEvents();time.sleep(.01)
+        assert predicate(),window.worker.error
+    path=tmp_path/'desktop.camproj'
+    try:
+        wait_until(lambda:window.last_batch is not None)
+        window.depth.setChecked(True)
+        window.request_save_project(path)
+        wait_until(lambda:path.exists() and 'Saved project' in window.import_status.text())
+        window.depth.setChecked(False)
+        run=window.last_batch.stamp.run_id
+        window.request_open_project(path)
+        wait_until(lambda:window.last_batch.stamp.run_id!=run)
+        assert window.depth.isChecked()
+        assert window.last_batch.sim_time==0
+        assert window.mode.text()=='Mode: edit'
+        stable=window.last_batch.stamp.run_id
+        window.request_open_project(tmp_path/'missing.camproj')
+        wait_until(lambda:'missing.camproj' in window.import_status.text() and 'Opening' not in window.import_status.text())
+        assert window.last_batch.stamp.run_id==stable
+        assert window.worker.error is None
+    finally:
+        window.close()
+        wait_until(lambda:not window.worker.is_alive())
+        app.processEvents()
