@@ -2,8 +2,7 @@
 import argparse
 import json
 from pathlib import Path
-from queue import Queue, Empty, SimpleQueue
-from threading import Thread, Event
+from queue import Empty
 from time import perf_counter, process_time
 import numpy as np
 from PySide6.QtCore import Qt, QTimer, Signal, QByteArray
@@ -11,160 +10,14 @@ from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QGridLayout, QLabel, QPushButton, QCheckBox, QHBoxLayout,
                                QFileDialog, QInputDialog, QDialog, QDockWidget)
-from .render.worker import RenderSession, LatestBatch
-from .metrics import Measurement, environment
-from .project.importer import SceneProject
+from .metrics import environment
 from .ui.import_dialog import PlacementDialog
 from .ui.editor import Editor
 from .ui.preview import PreviewPanel
-from .sim.engine import Simulation,Mode
-from .project.store import save_project,load_project
 from .api.streams import DataAPI
 
 
-class Worker(Thread):
-    def __init__(self, width, height, fps, model=None, packages=None, api=None):
-        super().__init__(name='mujoco-render', daemon=False)
-        self.width, self.height, self.fps = width, height, fps
-        self.api=api if api is not None else DataAPI()
-        self.initial_model = model
-        self.packages = dict(packages or {})
-        self.events = SimpleQueue()
-        self.stop = Event()
-        self.commands = Queue(maxsize=64)
-        self.mailbox = LatestBatch()
-        self.error = None
-        self.gl_renderer = 'initializing'
-        self.rendered = 0
-        self.measurement = Measurement()
-
-    def run(self):
-        session = None
-        try:
-            try:
-                project = (SceneProject.open(self.initial_model,self.packages)
-                           if self.initial_model else SceneProject.demo())
-            except Exception as exc:
-                project = SceneProject.demo()
-                self.events.put({'ok':False,'message':f'{exc}\nShowing demo scene; choose Open to retry.'})
-            session = RenderSession(self.width,self.height,project=project)
-            self.gl_renderer = session.gl_renderer
-            self.events.put({'scene':session.scene_description()})
-            simulation=Simulation(session,running=self.initial_model is None)
-            self.events.put({'mode':simulation.mode.value})
-            previous = perf_counter()
-            while not self.stop.is_set():
-                start = perf_counter()
-                delta, previous = min(start-previous,.25),start
-                manual_seconds=0.0
-                while True:
-                    try:
-                        command,payload = self.commands.get_nowait()
-                    except Empty:
-                        break
-                    if command == 'running':
-                        simulation.transition('run' if payload else 'pause')
-                        self.events.put({'mode':simulation.mode.value})
-                        delta = 0
-                    elif command == 'frustums':
-                        session.show_frustums=payload
-                    elif command in ('reset','step','edit','save_initial'):
-                        if command=='step':
-                            self.api.bind(session)
-                            self.api.drain_controls(session)
-                        before=float(session.data.time)
-                        simulation.transition(command)
-                        if command=='step':manual_seconds+=float(session.data.time)-before
-                        self.events.put({'mode':simulation.mode.value})
-                        self.events.put({'scene':session.scene_description()})
-                        delta = 0
-                    elif command == 'orbit':
-                        session.orbit(*payload)
-                    elif command == 'zoom':
-                        session.zoom(payload)
-                    elif command in ('edit_body','edit_camera','aim_camera','move_camera'):
-                        if command == 'edit_body':
-                            simulation.transition('pause')
-                            self.events.put({'mode':simulation.mode.value})
-                            delta = 0
-                        try:
-                            if command == 'aim_camera':
-                                bid=next(bid for bid,n in session._body_names.items() if n==payload['target'])
-                                session.aim_camera(payload['name'],session.data.xpos[bid].copy())
-                            else:
-                                getattr(session,command)(**payload)
-                            if command=='edit_body':
-                                simulation.target_time=float(session.data.time)
-                                simulation.mode=Mode.EDIT
-                            self.events.put({'mode':simulation.mode.value})
-                            self.events.put({'scene':session.scene_description(),'edit_message':f'Applied; simulation {simulation.mode.value}.'})
-                        except Exception as exc:
-                            self.events.put({'scene':session.scene_description(),'edit_message':str(exc)})
-                    elif command == 'save_project':
-                        simulation.transition('pause')
-                        delta=0
-                        self.events.put({'mode':simulation.mode.value})
-                        try:
-                            save_project(session,payload['path'],payload['layout'])
-                            message='Saved project '+payload['path']
-                        except Exception as exc:
-                            message='Save failed: '+str(exc)
-                        self.events.put({'storage_message':message})
-                        previous=perf_counter()
-                    elif command in ('model','open_project'):
-                        simulation.transition('pause')
-                        self.events.put({'mode':simulation.mode.value})
-                        delta = 0
-                        replacement = None
-                        try:
-                            if command=='open_project':
-                                candidate,layout=load_project(payload['path'],revision=session.model_revision+1)
-                            elif payload['append']:
-                                candidate = project.append(payload['path'],payload['position'],
-                                                           payload['quaternion'],payload['packages'])
-                            else:
-                                candidate = SceneProject.open(payload['path'],payload['packages'],
-                                                              revision=session.model_revision+1)
-                            replacement = RenderSession(self.width,self.height,project=candidate)
-                            if command=='model' and payload['append']:
-                                session.copy_edits_to(replacement)
-                                replacement.model_revision=session.model_revision+1
-                            if command=='model':replacement.show_frustums=session.show_frustums
-                            preview = replacement.capture()
-                        except Exception as exc:
-                            if replacement is not None:
-                                replacement.close()
-                            self.events.put({'ok':False,'message':str(exc)})
-                        else:
-                            old = session
-                            session,project = replacement,candidate
-                            old.close()
-                            simulation=Simulation(session)
-                            self.events.put({'mode':simulation.mode.value})
-                            self.mailbox.put(preview)
-                            message = f"Loaded {payload['path']} · model revision {candidate.revision}"
-                            if candidate.warnings:
-                                message += '\n'+'\n'.join(candidate.warnings)
-                            self.events.put({'ok':True,'message':message})
-                            self.events.put({'scene':session.scene_description()})
-                            if command=='open_project':self.events.put({'layout':layout,'frustums':session.show_frustums})
-                        previous = perf_counter()
-                self.api.bind(session)
-                self.api.drain_controls(session)
-                before_step = session.data.time
-                simulation.advance(delta)
-                batch,truth = session.capture_sample()
-                self.api.publish(batch,truth)
-                self.measurement.add(batch.render_ms,session.data.time-before_step+manual_seconds)
-                self.mailbox.put(batch)
-                self.rendered += 1
-                self.stop.wait(max(0,1/self.fps-(perf_counter()-start)))
-        except Exception as exc:
-            self.error = f'{type(exc).__name__}: {exc}'
-        finally:
-            self.api.close()
-            if session is not None:
-                session.close()
+from .runtime import Worker
 
 
 class View(QLabel):

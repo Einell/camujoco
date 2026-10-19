@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mujoco-camera-lab"
-version = "0.1.0"
+version = "0.2.0"
 description = "MuJoCo scene editor and multi-camera simulation desktop"
 requires-python = ">=3.10"
-dependencies = ["mujoco==3.6.0", "numpy==2.2.6", "PySide6-Essentials==6.8.3"]
+dependencies = ["mujoco==3.6.0", "numpy==2.2.6"]
 
 [project.optional-dependencies]
-test = ["pytest>=6.2.5,<9"]
+desktop = ["PySide6-Essentials==6.8.3"]
+test = ["pytest>=6.2.5,<9", "PySide6-Essentials==6.8.3"]
 
 [project.scripts]
 camera-lab = "camera_lab.app:main"

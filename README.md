@@ -2,6 +2,8 @@
 
 面向 Ubuntu 的 MuJoCo 场景与多相机桌面工具。支持 MJCF/URDF 打开与追加、物体与相机编辑、三路 RGB/深度预览、静态/动态切换，以及自包含项目保存。默认三路各 1280×720，目标 30 FPS。
 
+通过 `from camera_lab import CameraLab` 可不启动界面直接导入场景、配置相机、步进和采样；详见 [Python SDK](docs/python-sdk.md)。核心安装不需要 Qt，桌面为可选组件。本轮重构的回归结果见 [SDK 验证报告](reports/python-sdk-verification.md)。
+
 Python 进程内数据接口提供同步观测、独立真值、按帧位姿误差评估及带有效期的执行器控制。真实视觉算法、视觉定位与机器人策略在后续阶段接入。
 
 从 [使用指南](docs/user-guide.md) 开始；已有场景可直接打开 `examples/projects/table-robot.camproj`。测量结果与未验证范围见 [第一阶段验收](reports/acceptance.md)。
@@ -23,7 +25,7 @@ Python 进程内数据接口提供同步观测、独立真值、按帧位姿误�
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e '.[test]'
+python -m pip install -e '.[desktop,test]'
 MUJOCO_GL=egl camera-lab
 ```
 
