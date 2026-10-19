@@ -83,19 +83,21 @@ class Worker(Thread):
                     elif command == 'zoom':
                         session.zoom(payload)
                     elif command in ('edit_body','edit_camera','aim_camera','move_camera'):
-                        simulation.transition('pause')
-                        self.events.put({'mode':simulation.mode.value})
-                        delta = 0
+                        if command == 'edit_body':
+                            simulation.transition('pause')
+                            self.events.put({'mode':simulation.mode.value})
+                            delta = 0
                         try:
                             if command == 'aim_camera':
                                 bid=next(bid for bid,n in session._body_names.items() if n==payload['target'])
                                 session.aim_camera(payload['name'],session.data.xpos[bid].copy())
                             else:
                                 getattr(session,command)(**payload)
-                            simulation.target_time=float(session.data.time)
-                            if command=='edit_body':simulation.mode=Mode.EDIT
+                            if command=='edit_body':
+                                simulation.target_time=float(session.data.time)
+                                simulation.mode=Mode.EDIT
                             self.events.put({'mode':simulation.mode.value})
-                            self.events.put({'scene':session.scene_description(),'edit_message':'Applied; simulation paused.'})
+                            self.events.put({'scene':session.scene_description(),'edit_message':f'Applied; simulation {simulation.mode.value}.'})
                         except Exception as exc:
                             self.events.put({'scene':session.scene_description(),'edit_message':str(exc)})
                     elif command == 'save_project':
@@ -360,7 +362,8 @@ class Window(QMainWindow):
             self.import_status.setText('Opening project '+str(path))
 
     def edit(self,command,payload):
-        self.running.setChecked(False)
+        if command == 'edit_body':
+            self.running.setChecked(False)
         self.send(command,payload)
 
     def drag_camera(self,index,dx,dy,steps=0):

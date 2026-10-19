@@ -105,7 +105,10 @@ def test_editor_changes_camera_and_detaches_preview():
         window.editor.values['height'].setValue(100)
         window.editor.apply.click()
         wait_until(lambda:window.last_batch.frames[0].rgb.shape==(100,200,3))
-        assert not window.running.isChecked()
+        assert window.running.isChecked()
+        before=window.last_batch.sim_time
+        window.editor.aim.click()
+        wait_until(lambda:window.last_batch.sim_time>before+.1)
         panel=window.camera_panels[0]
         panel.detach()
         assert panel.dialog.isVisible()
@@ -248,3 +251,33 @@ def test_control_submitted_before_single_step_is_not_skipped():
     finally:
         worker.stop.set();worker.join(15)
         assert not worker.is_alive()
+
+
+def test_camera_navigation_preserves_running_and_paused_modes():
+    app=QApplication.instance() or QApplication([])
+    window=Window(width=160,height=90)
+    def wait_until(predicate):
+        until=time.monotonic()+10
+        while not predicate() and time.monotonic()<until:
+            app.processEvents();time.sleep(.01)
+        assert predicate(),window.worker.error
+    try:
+        wait_until(lambda:window.last_batch is not None)
+        for view in [window.overview,*window.camera_views]:
+            before=window.last_batch.sim_time
+            view.zoom.emit(1)
+            view.orbit.emit(2,3)
+            wait_until(lambda:window.last_batch.sim_time>before+.05)
+            assert window.running.isChecked()
+        window.running.setChecked(False)
+        wait_until(lambda:window.mode.text()=='Mode: paused')
+        before=window.last_batch.sim_time
+        sequence=window.last_batch.sequence
+        window.camera_views[0].zoom.emit(-1)
+        wait_until(lambda:window.last_batch.sequence>sequence+2)
+        assert window.last_batch.sim_time==before
+        assert not window.running.isChecked()
+    finally:
+        window.close()
+        wait_until(lambda:not window.worker.is_alive())
+        app.processEvents()

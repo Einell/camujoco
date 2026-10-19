@@ -56,6 +56,7 @@ class Editor(QWidget):
         row=next(r for r in self.description[key[0]] if r['name']==key[1])
         for name,value in zip(('x','y','z','qw','qx','qy','qz'),row['position']+row['quaternion']):self.values[name].setValue(value)
         camera=key[0]=='cameras';self.parent.setEnabled(camera)
+        self.apply.setText('Apply camera' if camera else 'Apply body · pause simulation')
         self.parent.setCurrentText(row['parent'])
         for name in ('width','height','fx','fy','cx','cy','near','far'):
             self.values[name].setEnabled(camera)
