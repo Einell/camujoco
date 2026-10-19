@@ -1,6 +1,6 @@
 # MuJoCo 多相机实验平台设计与实现计划
 
-日期：2026-10-19。状态：渲染基线已实现，并在当前 RTX 4060 Laptop 上完成桌面与后台性能测试；RTX 5060 验收及其余任务仍未完成。
+日期：2026-10-19。状态：渲染基线已实现，并在当前 RTX 4060 Laptop 上完成桌面与后台性能测试；RTX 5060 验收及任务 3–8 仍未完成，任务 2 已实现。
 
 **目标：** 在 Ubuntu 桌面上编辑 MuJoCo 场景，同时观察最多三路相机输出，为视觉算法和机器人策略提供明确的数据与控制接口。
 
@@ -135,11 +135,11 @@ benchmarks/three_cameras.py       性能基准与报告
 
 文件：contracts.py、coordinates.py、render/camera.py、tests/test_projection.py、tests/test_frames.py。
 
-- [ ] 用已知相机前方两米的平面构建深度测试，中心区域误差小于 1 毫米。
-- [ ] 用偏心主点和不同 fx/fy 构建标记投影测试，验证理论像素和实际渲染位置误差不超过 1 像素。
-- [ ] 实现上表类型、单位、不可变发布和坐标适配；限制 fx/fy>0、0<near<far、分辨率为正整数。
-- [ ] 验证修改相机参数后新图像和新 K 同时生效，三个相机的 batch_id、step_index 和 sim_time 一致。
-- [ ] 运行 `pytest tests/test_projection.py tests/test_frames.py -v`，通过后提交该交付物。
+- [x] 用已知相机前方两米的平面构建深度测试，中心区域误差小于 1 毫米。
+- [x] 用偏心主点和不同 fx/fy 构建标记投影测试，验证理论像素和实际渲染位置误差不超过 1 像素。
+- [x] 实现上表类型、单位、不可变发布和坐标适配；限制 fx/fy>0、0<near<far、分辨率为正整数。
+- [x] 验证修改相机参数后新图像和新 K 同时生效，三个相机的 batch_id、step_index 和 sim_time 一致。
+- [x] 运行 `pytest tests/test_projection.py tests/test_frames.py -v`，通过后提交该交付物。
 
 ### 任务 3 场景导入与追加
 
@@ -227,3 +227,5 @@ benchmarks/three_cameras.py       性能基准与报告
 ## 当前实现记录
 
 2026-10-19：已交付 outputs/camera-lab 渲染基线。当前实际硬件为 RTX 4060 Laptop，桌面 60 秒测试每路 29.85 FPS，渲染 P95 22.90 ms。任务 1 中针对 RTX 5060 的验收仍未完成；其余功能任务尚未执行。详细记录见 camera-lab/reports/verification.md。
+
+2026-10-19：任务 2 已实现。增加相机内参/独立分辨率与裁剪接口、光学坐标转换、同步采样标识及独立真值批次；包含实际渲染投影测试和样本导出脚本。相机挂载沿用导入模型已有的父 body，编辑挂载关系属于任务 4。PoseEstimate 与 ControlCommand 的运行时接入仍按任务 7 实现。
