@@ -119,4 +119,34 @@ def test_editor_changes_camera_and_detaches_preview():
         window.close()
         wait_until(lambda:not window.worker.is_alive())
         app.processEvents()
-    assert not floating.isVisible()
+    from shiboken6 import isValid
+    assert not isValid(floating) or not floating.isVisible()
+
+
+def test_simulation_buttons_step_save_and_return_to_edit():
+    app=QApplication.instance() or QApplication([])
+    window=Window(width=160,height=90)
+    window.show()
+    def wait_until(predicate):
+        until=time.monotonic()+15
+        while not predicate() and time.monotonic()<until:
+            app.processEvents();time.sleep(.01)
+        assert predicate(),window.worker.error
+    try:
+        wait_until(lambda:window.last_batch is not None)
+        window.return_edit.click()
+        wait_until(lambda:window.last_batch.sim_time==0 and window.mode.text()=='Mode: edit')
+        run=window.last_batch.stamp.run_id
+        window.step.click()
+        wait_until(lambda:window.last_batch.stamp.step_index==1)
+        assert not window.running.isChecked()
+        window.save_initial.click()
+        wait_until(lambda:window.last_batch.stamp.run_id!=run and window.last_batch.sim_time==0)
+        window.running.setChecked(True)
+        wait_until(lambda:window.last_batch.sim_time>.05)
+        window.return_edit.click()
+        wait_until(lambda:window.last_batch.sim_time==0 and window.mode.text()=='Mode: edit')
+    finally:
+        window.close()
+        wait_until(lambda:not window.worker.is_alive())
+        app.processEvents()

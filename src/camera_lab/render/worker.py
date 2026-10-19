@@ -82,6 +82,9 @@ class RenderSession(Editing):
                 used_names.add(candidate)
         self._body_names = names
         self.data = mujoco.MjData(self.model)
+        self._initial_qpos = self.data.qpos.copy()
+        self._initial_mocap_pos = self.data.mocap_pos.copy()
+        self._initial_mocap_quat = self.data.mocap_quat.copy()
         mujoco.mj_forward(self.model, self.data)
         self.view = mujoco.MjvCamera()
         mujoco.mjv_defaultCamera(self.view)
@@ -125,7 +128,35 @@ class RenderSession(Editing):
         self.step_index = 0
         self.sequence = 0
         mujoco.mj_resetData(self.model, self.data)
+        self.data.qpos[:]=self._initial_qpos
+        self.data.mocap_pos[:]=self._initial_mocap_pos
+        self.data.mocap_quat[:]=self._initial_mocap_quat
         mujoco.mj_forward(self.model, self.data)
+
+    def single_step(self):
+        self._check()
+        self.advance_to(float(self.data.time)+float(self.model.opt.timestep))
+
+    def save_initial(self):
+        self._check()
+        self._initial_qpos=self.data.qpos.copy()
+        self._initial_mocap_pos=self.data.mocap_pos.copy()
+        self._initial_mocap_quat=self.data.mocap_quat.copy()
+        self.model_revision+=1
+        self.reset()
+
+    def snapshot(self):
+        self._check()
+        from ..sim.snapshot import capture
+        return capture(self)
+
+    def restore_snapshot(self,snapshot):
+        self._check()
+        from ..sim.snapshot import restore
+        restore(self,snapshot)
+        self.run_id=str(uuid4())
+        self.step_index=snapshot.step_index
+        self.sequence=0
 
     def orbit(self, dx, dy):
         self._check()

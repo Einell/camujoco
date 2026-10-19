@@ -29,6 +29,9 @@ class Editing:
             adr=int(self.model.jnt_qposadr[joint]) if free else 0
             p=self.data.qpos[adr:adr+3] if free else self.model.body_pos[bid]
             q=self.data.qpos[adr+3:adr+7] if free else self.model.body_quat[bid]
+            mocap=int(self.model.body_mocapid[bid])
+            if mocap>=0:
+                p=self.data.mocap_pos[mocap];q=self.data.mocap_quat[mocap]
             bodies.append(dict(name=name,parent=self._body_names.get(int(self.model.body_parentid[bid]),'world'),position=p.tolist(),quaternion=q.tolist(),free=bool(free)))
         cameras=[]
         for name,cid in self._camera_ids.items():
@@ -44,8 +47,13 @@ class Editing:
         joint=int(self.model.body_jntadr[bid])
         if self.model.body_jntnum[bid] and self.model.jnt_type[joint]==mujoco.mjtJoint.mjJNT_FREE:
             adr=int(self.model.jnt_qposadr[joint]);self.model.qpos0[adr:adr+7]=np.r_[p,q]
+            self._initial_qpos[adr:adr+7]=np.r_[p,q]
         else:
             self.model.body_pos[bid]=p;self.model.body_quat[bid]=q
+        mocap=int(self.model.body_mocapid[bid])
+        if mocap>=0:
+            self._initial_mocap_pos[mocap]=p
+            self._initial_mocap_quat[mocap]=q
         mujoco.mj_setConst(self.model,self.data)
         self.model_revision+=1
         self.reset()
@@ -89,6 +97,20 @@ class Editing:
 
     def copy_edits_to(self,other):
         for name,(p,q) in self._body_edits.items(): other.edit_body(name,p,q)
+        other_names={name:bid for bid,name in other._body_names.items()}
+        for bid,name in self._body_names.items():
+            dest=other_names[name]
+            for offset in range(int(self.model.body_jntnum[bid])):
+                j=int(self.model.body_jntadr[bid])+offset
+                k=int(other.model.body_jntadr[dest])+offset
+                size={0:7,1:4,2:1,3:1}[int(self.model.jnt_type[j])]
+                a=int(self.model.jnt_qposadr[j]);b=int(other.model.jnt_qposadr[k])
+                other._initial_qpos[b:b+size]=self._initial_qpos[a:a+size]
+            a=int(self.model.body_mocapid[bid]);b=int(other.model.body_mocapid[dest])
+            if a>=0 and b>=0:
+                other._initial_mocap_pos[b]=self._initial_mocap_pos[a]
+                other._initial_mocap_quat[b]=self._initial_mocap_quat[a]
+        other.reset()
         for c in self.scene_description()['cameras']:
             if c['name'] in self._camera_edits:
                 other.edit_camera(c['name'],c['parent'],c['position'],c['quaternion'],c['config'])

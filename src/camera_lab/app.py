@@ -17,6 +17,7 @@ from .project.importer import SceneProject
 from .ui.import_dialog import PlacementDialog
 from .ui.editor import Editor
 from .ui.preview import PreviewPanel
+from .sim.engine import Simulation,Mode
 
 
 class Worker(Thread):
@@ -46,32 +47,38 @@ class Worker(Thread):
             session = RenderSession(self.width,self.height,project=project)
             self.gl_renderer = session.gl_renderer
             self.events.put({'scene':session.scene_description()})
-            running = self.initial_model is None
-            target_time = 0.0
+            simulation=Simulation(session,running=self.initial_model is None)
+            self.events.put({'mode':simulation.mode.value})
             previous = perf_counter()
             while not self.stop.is_set():
                 start = perf_counter()
                 delta, previous = min(start-previous,.25),start
+                manual_seconds=0.0
                 while True:
                     try:
                         command,payload = self.commands.get_nowait()
                     except Empty:
                         break
                     if command == 'running':
-                        running = payload
+                        simulation.transition('run' if payload else 'pause')
+                        self.events.put({'mode':simulation.mode.value})
                         delta = 0
                     elif command == 'frustums':
                         session.show_frustums=payload
-                    elif command == 'reset':
-                        session.reset()
-                        target_time = 0.0
+                    elif command in ('reset','step','edit','save_initial'):
+                        before=float(session.data.time)
+                        simulation.transition(command)
+                        if command=='step':manual_seconds+=float(session.data.time)-before
+                        self.events.put({'mode':simulation.mode.value})
+                        self.events.put({'scene':session.scene_description()})
                         delta = 0
                     elif command == 'orbit':
                         session.orbit(*payload)
                     elif command == 'zoom':
                         session.zoom(payload)
                     elif command in ('edit_body','edit_camera','aim_camera','move_camera'):
-                        running = False
+                        simulation.transition('pause')
+                        self.events.put({'mode':simulation.mode.value})
                         delta = 0
                         try:
                             if command == 'aim_camera':
@@ -79,12 +86,15 @@ class Worker(Thread):
                                 session.aim_camera(payload['name'],session.data.xpos[bid].copy())
                             else:
                                 getattr(session,command)(**payload)
-                            target_time=float(session.data.time)
+                            simulation.target_time=float(session.data.time)
+                            if command=='edit_body':simulation.mode=Mode.EDIT
+                            self.events.put({'mode':simulation.mode.value})
                             self.events.put({'scene':session.scene_description(),'edit_message':'Applied; simulation paused.'})
                         except Exception as exc:
                             self.events.put({'scene':session.scene_description(),'edit_message':str(exc)})
                     elif command == 'model':
-                        running = False
+                        simulation.transition('pause')
+                        self.events.put({'mode':simulation.mode.value})
                         delta = 0
                         replacement = None
                         try:
@@ -108,7 +118,8 @@ class Worker(Thread):
                             old = session
                             session,project = replacement,candidate
                             old.close()
-                            target_time = 0.0
+                            simulation=Simulation(session)
+                            self.events.put({'mode':simulation.mode.value})
                             self.mailbox.put(preview)
                             message = f"Loaded {payload['path']} · model revision {candidate.revision}"
                             if candidate.warnings:
@@ -117,11 +128,9 @@ class Worker(Thread):
                             self.events.put({'scene':session.scene_description()})
                         previous = perf_counter()
                 before_step = session.data.time
-                if running:
-                    target_time += delta
-                    session.advance_to(target_time)
+                simulation.advance(delta)
                 batch = session.capture()
-                self.measurement.add(batch.render_ms,session.data.time-before_step)
+                self.measurement.add(batch.render_ms,session.data.time-before_step+manual_seconds)
                 self.mailbox.put(batch)
                 self.rendered += 1
                 self.stop.wait(max(0,1/self.fps-(perf_counter()-start)))
@@ -221,16 +230,28 @@ class Window(QMainWindow):
         self.running.setCheckable(True)
         self.running.setChecked(model is None)
         self.running.toggled.connect(lambda value: self.send('running', value))
-        reset = QPushButton('Reset scene')
+        reset = QPushButton('Reset initial')
         reset.clicked.connect(lambda: self.send('reset', None))
+        self.step=QPushButton('Single step')
+        self.return_edit=QPushButton('Return to edit')
+        self.save_initial=QPushButton('Use pose as initial')
+        self.mode=QLabel('Mode: initializing')
+        for button,command in ((self.step,'step'),(self.return_edit,'edit'),(self.save_initial,'save_initial')):
+            button.clicked.connect(lambda checked=False,c=command:self.send(c,None))
         self.depth = QCheckBox('Show depth · 0–5 m')
         frustums=QCheckBox('Camera frustums')
         frustums.toggled.connect(lambda value:self.send('frustums',value))
-        for widget in (self.running, reset, self.depth, frustums):
+        for widget in (self.running, reset, self.step, self.return_edit, self.save_initial):
             controls.addWidget(widget)
         controls.addStretch()
-        controls.addWidget(QLabel(f'3 cameras · {width} × {height} · target {fps:g} FPS'))
+        controls.addWidget(self.mode)
         layout.addLayout(controls)
+        display_controls=QHBoxLayout()
+        display_controls.addWidget(self.depth)
+        display_controls.addWidget(frustums)
+        display_controls.addStretch()
+        display_controls.addWidget(QLabel(f'3 cameras · {width} × {height} · target {fps:g} FPS'))
+        layout.addLayout(display_controls)
         grid = QGridLayout()
         self.overview = View(interactive=True)
         self.overview.orbit.connect(lambda x, y: self.send('orbit', (x, y)))
@@ -334,6 +355,12 @@ class Window(QMainWindow):
                 notice = self.worker.events.get_nowait()
             except Empty:
                 break
+            if 'mode' in notice:
+                self.mode.setText('Mode: '+notice['mode'])
+                self.running.blockSignals(True)
+                self.running.setChecked(notice['mode']=='running')
+                self.running.blockSignals(False)
+                continue
             if 'scene' in notice:
                 self.editor.update_scene(notice['scene'])
                 if 'edit_message' in notice:self.import_status.setText(notice['edit_message'])
