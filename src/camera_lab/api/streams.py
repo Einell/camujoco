@@ -7,7 +7,8 @@ from ..contracts import PoseEstimate,PoseError,ControlCommand,ControlResult
 
 
 class Subscription:
-    def __init__(self):
+    def __init__(self, cancel=None):
+        self._cancel=cancel
         self._queue=deque(maxlen=2);self._lock=Lock();self.dropped=0;self.closed=False
 
     def put(self,value):
@@ -25,7 +26,9 @@ class Subscription:
         with self._lock:self._queue.clear()
 
     def close(self):
-        with self._lock:self.closed=True;self._queue.clear()
+        with self._lock:
+            self.closed=True;self._queue.clear()
+            if self._cancel is not None:self._cancel.set()
 
 
 class DataAPI:
@@ -56,14 +59,14 @@ class DataAPI:
         for kind in ('observations','truth'):
             for sub in self._subscribers[kind]:sub.clear()
 
-    def _subscribe(self,kind):
+    def _subscribe(self,kind,cancel=None):
         with self._lock:
             if self.closed:raise RuntimeError('DataAPI closed')
             self._subscribers[kind]=[s for s in self._subscribers[kind] if not s.closed]
             if len(self._subscribers[kind])>=64:raise ValueError('Too many subscribers')
-            sub=Subscription();self._subscribers[kind].append(sub);return sub
+            sub=Subscription(cancel);self._subscribers[kind].append(sub);return sub
 
-    def subscribe_observations(self):return self._subscribe('observations')
+    def subscribe_observations(self, *, cancel=None):return self._subscribe('observations',cancel)
     def subscribe_truth(self):return self._subscribe('truth')
     def subscribe_control_results(self):return self._subscribe('controls')
 

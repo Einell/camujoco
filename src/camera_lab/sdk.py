@@ -2,6 +2,7 @@
 import math
 from numbers import Integral
 from .runtime import Worker
+from .modules import ModuleManager
 
 
 class Scene:
@@ -67,6 +68,7 @@ class CameraLab:
             raise ValueError('fps must be finite and positive')
         self._worker = Worker(width,height,fps,model,packages,running=False,
                               continuous=False,fallback=False,events=False)
+        self.modules = ModuleManager(self._worker.api)
         self.scene = Scene(self)
         self.cameras = Cameras(self)
         self._worker.start()
@@ -121,12 +123,16 @@ class CameraLab:
         return self._call('open_project',dict(path=str(path)))
 
     def close(self):
-        """Wait for current execution and resource release; reject queued work. Idempotent."""
+        """Close rendering; return whether all algorithm threads stopped within two seconds."""
+        modules_stopped = self.modules.close()
         self._worker.stop.set()
         self._worker.join()
+        return modules_stopped
 
     def __enter__(self):
         return self
 
     def __exit__(self, *_):
-        self.close()
+        if not self.close():
+            import warnings
+            warnings.warn("Algorithm threads still stopping after CameraLab close", RuntimeWarning)

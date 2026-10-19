@@ -10,6 +10,8 @@ from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QGridLayout, QLabel, QPushButton, QCheckBox, QHBoxLayout,
                                QFileDialog, QInputDialog, QDialog, QDockWidget)
+from .modules import ModuleManager, FixedPoseEstimator
+from .ui.modules import ModulePanel
 from .metrics import environment
 from .ui.import_dialog import PlacementDialog
 from .ui.editor import Editor
@@ -76,6 +78,8 @@ class Window(QMainWindow):
         self.packages = dict(packages or {})
         self.worker = Worker(width,height,fps,model,self.packages,api)
         self.api=self.worker.api
+        self.modules=ModuleManager(self.api)
+        self.modules.register("Fixed pose demo",lambda:FixedPoseEstimator(object_id="red_box"))
         self.last_batch = None
         self.first_frame_at = None
         self.measure_start = None
@@ -85,6 +89,7 @@ class Window(QMainWindow):
         self.measure_end = None
         self.saved_report = False
         self._closing = False
+        self._module_close_deadline = None
         root = QWidget()
         layout = QVBoxLayout(root)
         title = QLabel('CAMERA LAB   /   MuJoCo scenes and cameras')
@@ -174,6 +179,11 @@ class Window(QMainWindow):
         dock.setWidget(self.editor)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea,dock)
         dock.setMinimumWidth(270)
+        self.module_panel=ModulePanel(self.modules)
+        module_dock=QDockWidget("Algorithm modules",self)
+        module_dock.setObjectName("algorithm-modules")
+        module_dock.setWidget(self.module_panel)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea,module_dock)
         self.resize(1550,950)
         self.setStyleSheet('QMainWindow,QWidget {background:#1a2330; color:#dce7f4;} '
                           'QPushButton {padding:8px; background:#34465c; border-radius:4px;} '
@@ -263,6 +273,7 @@ class Window(QMainWindow):
             return False
 
     def poll(self):
+        self.module_panel.poll()
         if self._closing:
             if not self.worker.is_alive():
                 self.close()
@@ -337,7 +348,16 @@ class Window(QMainWindow):
         if self.measure_end is None:
             self.measure_end = perf_counter()
             self.worker.measurement.stop()
+        modules_stopped=self.modules.close(timeout=0)
+        if self._module_close_deadline is None:self._module_close_deadline=perf_counter()+2
         self.worker.stop.set()
+        if not modules_stopped and perf_counter()<self._module_close_deadline:
+            self._closing=True
+            event.ignore()
+            return
+        if not modules_stopped:
+            import warnings
+            warnings.warn("Algorithm threads still stopping after window close", RuntimeWarning)
         if self.worker.is_alive():
             self._closing = True
             event.ignore()
