@@ -35,8 +35,9 @@ def test_motion_reset_and_previous_frames_are_stable():
         assert reset.sim_time == 0
         np.testing.assert_array_equal(session.data.qpos, initial_qpos)
         np.testing.assert_array_equal(session.data.xpos, initial_xpos)
-        # NVIDIA rasterization can differ by one 8-bit level even with no step.
-        np.testing.assert_allclose(saved, reset.frames[0].rgb, atol=1, rtol=0)
+        # NVIDIA rasterization can differ by two 8-bit levels at isolated pixels.
+        np.testing.assert_allclose(saved, reset.frames[0].rgb, atol=2, rtol=0)
+        assert np.abs(saved.astype(float)-reset.frames[0].rgb.astype(float)).mean()<.01
 
 
 def test_depth_measures_two_meter_plane():

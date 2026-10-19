@@ -85,3 +85,72 @@ class ObservationBatch:
 class GroundTruthBatch:
     stamp: FrameStamp
     object_poses: Mapping[str, np.ndarray]
+
+
+@dataclass(frozen=True)
+class PoseEstimate:
+    stamp: FrameStamp
+    camera_id: str
+    object_id: str
+    T_camera_object: np.ndarray
+    confidence: float=1.0
+    latency_ms: float=0.0
+
+    def __post_init__(self):
+        t=np.asarray(self.T_camera_object,dtype=float)
+        if (t.shape!=(4,4) or not np.isfinite(t).all() or
+            not np.allclose(t[3],[0,0,0,1],atol=1e-8) or
+            not np.allclose(t[:3,:3].T@t[:3,:3],np.eye(3),atol=1e-6) or
+            not np.isclose(np.linalg.det(t[:3,:3]),1,atol=1e-6)):
+            raise ValueError('Pose estimate must be a finite rigid transform')
+        if not math.isfinite(self.confidence) or not 0<=self.confidence<=1 or not math.isfinite(self.latency_ms) or self.latency_ms<0:
+            raise ValueError('Invalid confidence or latency')
+        object.__setattr__(self,'T_camera_object',readonly(t))
+
+
+@dataclass(frozen=True)
+class PoseError:
+    stamp: FrameStamp
+    camera_id: str
+    object_id: str
+    status: str
+    translation_m: float | None=None
+    rotation_rad: float | None=None
+
+
+@dataclass(frozen=True)
+class ControlCommand:
+    run_id: str
+    model_revision: int
+    target_step: int
+    valid_until_step: int
+    expires_at_ns: int
+    values: Mapping[str,float]
+    semantics: str='native_ctrl'
+
+    def __post_init__(self):
+        from types import MappingProxyType
+        if any(isinstance(v,bool) or not isinstance(v,Integral) or v<0
+               for v in (self.model_revision,self.target_step,self.valid_until_step,self.expires_at_ns)):
+            raise ValueError('Command versions, steps and deadline must be nonnegative integers')
+        if self.valid_until_step<self.target_step or not self.values:
+            raise ValueError('Command needs values and a valid step interval')
+        if self.semantics!='native_ctrl':raise ValueError('Only native_ctrl semantics are supported')
+        if any(not isinstance(k,str) or not math.isfinite(v) for k,v in self.values.items()):
+            raise ValueError('Actuator values must be named and finite')
+        object.__setattr__(self,'values',MappingProxyType(dict(self.values)))
+
+
+@dataclass(frozen=True)
+class ControlResult:
+    command: ControlCommand
+    accepted: bool
+    message: str
+
+
+@dataclass(frozen=True)
+class ActuatorInfo:
+    name: str | None
+    ctrlrange: tuple[float,float] | None
+    default: float
+    semantics: str='native_ctrl'

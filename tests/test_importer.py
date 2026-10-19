@@ -123,3 +123,10 @@ def test_append_reports_physics_flags_difference(tmp_path):
     scene=SceneProject.demo().append(source)
     assert any('disableflags' in warning for warning in scene.warnings)
     assert scene.model.opt.disableflags == 0
+
+
+def test_strippath_resolves_exported_mesh_basename(tmp_path):
+    (tmp_path/'assets').mkdir()
+    (tmp_path/'assets/t.obj').write_text('v 0 0 0\nv .1 0 0\nv 0 .1 0\nv 0 0 .1\nf 1 3 2\nf 1 2 4\nf 1 4 3\nf 2 3 4\n')
+    source=write(tmp_path,'stripped.xml','<mujoco><compiler strippath="true" meshdir="assets"/><asset><mesh name="m" file="exported/on/other/machine/t.obj"/></asset><worldbody><geom type="mesh" mesh="m"/></worldbody></mujoco>')
+    assert SceneProject.open(source).model.nmesh==1

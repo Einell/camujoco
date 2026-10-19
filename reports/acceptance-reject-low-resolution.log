@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/home/book/Projects/camera-lab/benchmarks/desktop_acceptance.py", line 105, in <module>
+    if __name__=='__main__':main()
+  File "/home/book/Projects/camera-lab/benchmarks/desktop_acceptance.py", line 45, in main
+    raise RuntimeError(window.worker.error or state['error'])
+RuntimeError: Loaded project does not produce three 1280x720 RGB/depth cameras

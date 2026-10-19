@@ -16,6 +16,7 @@ import numpy as np
 from ..contracts import CameraConfig, CameraFrame, FrameStamp, ObservationBatch, GroundTruthBatch
 from ..coordinates import camera_world_pose, world_pose
 from .camera import read_config, apply_intrinsics, clipping
+from .editing import Editing
 
 
 class LatestBatch:
@@ -37,11 +38,15 @@ class LatestBatch:
             return value
 
 
-class RenderSession:
+class RenderSession(Editing):
     def __init__(self, width=1280, height=720, camera_count=3, xml=None, cameras=None, project=None):
         if width <= 0 or height <= 0 or camera_count not in (1, 2, 3):
             raise ValueError('Positive dimensions and 1–3 cameras are required')
         self._owner = get_ident()
+        self._body_edits = {}
+        self._controls = None
+        self._camera_edits = set()
+        self.show_frustums = False
         if project is not None and (xml is not None or cameras is not None):
             raise ValueError('project cannot be combined with xml or cameras')
         self.project = project
@@ -78,6 +83,9 @@ class RenderSession:
                 used_names.add(candidate)
         self._body_names = names
         self.data = mujoco.MjData(self.model)
+        self._initial_qpos = self.data.qpos.copy()
+        self._initial_mocap_pos = self.data.mocap_pos.copy()
+        self._initial_mocap_quat = self.data.mocap_quat.copy()
         mujoco.mj_forward(self.model, self.data)
         self.view = mujoco.MjvCamera()
         mujoco.mjv_defaultCamera(self.view)
@@ -98,6 +106,13 @@ class RenderSession:
         self.step_index = 0
         self.sequence = 0
         self.closed = False
+        if project is not None and project.saved_state is not None:
+            try:
+                from ..project.store import restore_state
+                restore_state(self,project.saved_state)
+            except Exception:
+                self.close()
+                raise
 
     def _check(self):
         if get_ident() != self._owner:
@@ -108,20 +123,58 @@ class RenderSession:
     def advance_to(self, sim_time):
         self._check()
         while self.data.time + 1e-12 < sim_time:
-            if self._demo_motion and self.model.nu:
+            controlled=self._controls.apply() if self._controls is not None else False
+            if not controlled and self._demo_motion and self.model.nu:
                 self.data.ctrl[0] = .6 * math.sin(2 * math.pi * .6 * self.data.time)
             mujoco.mj_step(self.model, self.data)
             self.step_index += 1
         # mj_step leaves position-derived fields from the previous integration.
         mujoco.mj_forward(self.model, self.data)
 
+    def submit_control(self,command):
+        self._check()
+        if self._controls is None:
+            from ..api.control import ControlScheduler
+            self._controls=ControlScheduler(self)
+        self._controls.submit(command)
+
     def reset(self):
         self._check()
         self.run_id = str(uuid4())
         self.step_index = 0
         self.sequence = 0
+        if self._controls is not None:self._controls.clear()
         mujoco.mj_resetData(self.model, self.data)
+        self.data.qpos[:]=self._initial_qpos
+        self.data.mocap_pos[:]=self._initial_mocap_pos
+        self.data.mocap_quat[:]=self._initial_mocap_quat
+        if self._controls is not None:self._controls.apply()
         mujoco.mj_forward(self.model, self.data)
+
+    def single_step(self):
+        self._check()
+        self.advance_to(float(self.data.time)+float(self.model.opt.timestep))
+
+    def save_initial(self):
+        self._check()
+        self._initial_qpos=self.data.qpos.copy()
+        self._initial_mocap_pos=self.data.mocap_pos.copy()
+        self._initial_mocap_quat=self.data.mocap_quat.copy()
+        self.model_revision+=1
+        self.reset()
+
+    def snapshot(self):
+        self._check()
+        from ..sim.snapshot import capture
+        return capture(self)
+
+    def restore_snapshot(self,snapshot):
+        self._check()
+        from ..sim.snapshot import restore
+        restore(self,snapshot)
+        self.run_id=str(uuid4())
+        self.step_index=snapshot.step_index
+        self.sequence=0
 
     def orbit(self, dx, dy):
         self._check()
@@ -171,6 +224,8 @@ class RenderSession:
                            self.step_index, float(self.data.time), monotonic_ns())
         self.renderer.disable_depth_rendering()
         self.renderer.update_scene(self.data, camera=self.view)
+        if self.show_frustums:
+            self.draw_frustums()
         overview = self.renderer.render()
         overview.setflags(write=False)
         frames = []

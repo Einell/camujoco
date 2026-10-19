@@ -1,0 +1,266 @@
+{
+  "platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.35",
+  "python": "3.10.12",
+  "versions": {
+    "mujoco": "3.6.0",
+    "numpy": "2.2.6",
+    "PySide6-Essentials": "6.8.3"
+  },
+  "mujoco_gl": "egl",
+  "qt_platform": "desktop",
+  "gl_renderer": "NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2",
+  "requested_seconds": 1800.0,
+  "elapsed_seconds": 567.6849823869998,
+  "width": 1280,
+  "height": 720,
+  "cameras": 3,
+  "rgb_and_depth": true,
+  "desktop_visible": true,
+  "reopens_requested": 9,
+  "reopens_completed": 9,
+  "rendered_batches": 16851,
+  "worker_stopped": true,
+  "error": "Output dimensions changed",
+  "samples": [
+    {
+      "seconds": 0.21127564500056906,
+      "rss_mib": 250.46875,
+      "rendered": 1,
+      "sim_time": 0.002,
+      "reopens_completed": 0,
+      "ui_dropped": 0,
+      "gpu": {
+        "columns": [
+          "name",
+          "driver",
+          "utilization_percent",
+          "memory_mib"
+        ],
+        "rows": [
+          [
+            "NVIDIA GeForce RTX 4060 Laptop GPU",
+            "590.48.01",
+            "16",
+            "812"
+          ]
+        ]
+      }
+    },
+    {
+      "seconds": 60.24265830400054,
+      "rss_mib": 355.53515625,
+      "rendered": 1791,
+      "sim_time": 0.0,
+      "reopens_completed": 1,
+      "ui_dropped": 0,
+      "gpu": {
+        "columns": [
+          "name",
+          "driver",
+          "utilization_percent",
+          "memory_mib"
+        ],
+        "rows": [
+          [
+            "NVIDIA GeForce RTX 4060 Laptop GPU",
+            "590.48.01",
+            "37",
+            "813"
+          ]
+        ]
+      }
+    },
+    {
+      "seconds": 120.44216304900056,
+      "rss_mib": 397.16796875,
+      "rendered": 3575,
+      "sim_time": 0.0,
+      "reopens_completed": 2,
+      "ui_dropped": 1,
+      "gpu": {
+        "columns": [
+          "name",
+          "driver",
+          "utilization_percent",
+          "memory_mib"
+        ],
+        "rows": [
+          [
+            "NVIDIA GeForce RTX 4060 Laptop GPU",
+            "590.48.01",
+            "34",
+            "803"
+          ]
+        ]
+      }
+    },
+    {
+      "seconds": 180.44257535900033,
+      "rss_mib": 412.609375,
+      "rendered": 5359,
+      "sim_time": 59.93800000002729,
+      "reopens_completed": 2,
+      "ui_dropped": 1,
+      "gpu": {
+        "columns": [
+          "name",
+          "driver",
+          "utilization_percent",
+          "memory_mib"
+        ],
+        "rows": [
+          [
+            "NVIDIA GeForce RTX 4060 Laptop GPU",
+            "590.48.01",
+            "22",
+            "802"
+          ]
+        ]
+      }
+    },
+    {
+      "seconds": 240.64230908700029,
+      "rss_mib": 422.0625,
+      "rendered": 7147,
+      "sim_time": 59.94000000002729,
+      "reopens_completed": 3,
+      "ui_dropped": 1,
+      "gpu": {
+        "columns": [
+          "name",
+          "driver",
+          "utilization_percent",
+          "memory_mib"
+        ],
+        "rows": [
+          [
+            "NVIDIA GeForce RTX 4060 Laptop GPU",
+            "590.48.01",
+            "21",
+            "798"
+          ]
+        ]
+      }
+    },
+    {
+      "seconds": 300.64241905400013,
+      "rss_mib": 415.1015625,
+      "rendered": 8931,
+      "sim_time": 59.75800000002707,
+      "reopens_completed": 4,
+      "ui_dropped": 1,
+      "gpu": {
+        "columns": [
+          "name",
+          "driver",
+          "utilization_percent",
+          "memory_mib"
+        ],
+        "rows": [
+          [
+            "NVIDIA GeForce RTX 4060 Laptop GPU",
+            "590.48.01",
+            "23",
+            "731"
+          ]
+        ]
+      }
+    },
+    {
+      "seconds": 360.84179518700057,
+      "rss_mib": 416.4296875,
+      "rendered": 10721,
+      "sim_time": 59.93200000002728,
+      "reopens_completed": 5,
+      "ui_dropped": 1,
+      "gpu": {
+        "columns": [
+          "name",
+          "driver",
+          "utilization_percent",
+          "memory_mib"
+        ],
+        "rows": [
+          [
+            "NVIDIA GeForce RTX 4060 Laptop GPU",
+            "590.48.01",
+            "23",
+            "734"
+          ]
+        ]
+      }
+    },
+    {
+      "seconds": 420.842349171,
+      "rss_mib": 431.64453125,
+      "rendered": 12505,
+      "sim_time": 0.5360000000000004,
+      "reopens_completed": 6,
+      "ui_dropped": 1,
+      "gpu": {
+        "columns": [
+          "name",
+          "driver",
+          "utilization_percent",
+          "memory_mib"
+        ],
+        "rows": [
+          [
+            "NVIDIA GeForce RTX 4060 Laptop GPU",
+            "590.48.01",
+            "76",
+            "733"
+          ]
+        ]
+      }
+    },
+    {
+      "seconds": 481.0423264279998,
+      "rss_mib": 448.234375,
+      "rendered": 14294,
+      "sim_time": 59.93200000002728,
+      "reopens_completed": 7,
+      "ui_dropped": 1,
+      "gpu": {
+        "columns": [
+          "name",
+          "driver",
+          "utilization_percent",
+          "memory_mib"
+        ],
+        "rows": [
+          [
+            "NVIDIA GeForce RTX 4060 Laptop GPU",
+            "590.48.01",
+            "35",
+            "733"
+          ]
+        ]
+      }
+    },
+    {
+      "seconds": 541.2427157210004,
+      "rss_mib": 794.609375,
+      "rendered": 16069,
+      "sim_time": 0.0,
+      "reopens_completed": 8,
+      "ui_dropped": 2,
+      "gpu": {
+        "columns": [
+          "name",
+          "driver",
+          "utilization_percent",
+          "memory_mib"
+        ],
+        "rows": [
+          [
+            "NVIDIA GeForce RTX 4060 Laptop GPU",
+            "590.48.01",
+            "27",
+            "938"
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+[
+  {
+    "name": "acceptance-gpu-tests",
+    "exit_code": 0,
+    "expected_success": true
+  },
+  {
+    "name": "acceptance-demo-benchmark",
+    "exit_code": 0,
+    "expected_success": true
+  },
+  {
+    "name": "acceptance-robot-benchmark",
+    "exit_code": 0,
+    "expected_success": true
+  },
+  {
+    "name": "acceptance-reject-low-resolution",
+    "exit_code": 1,
+    "expected_success": false
+  },
+  {
+    "name": "acceptance-reject-missing-project",
+    "exit_code": 1,
+    "expected_success": false
+  }
+]

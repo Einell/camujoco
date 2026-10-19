@@ -1,8 +1,12 @@
 # MuJoCo Camera Lab
 
-Ubuntu 本地桌面多相机平台的第一个交付物：可运行的渲染验证程序。
+面向 Ubuntu 的 MuJoCo 场景与多相机桌面工具。支持 MJCF/URDF 打开与追加、物体与相机编辑、三路 RGB/深度预览、静态/动态切换，以及自包含项目保存。默认三路各 1280×720，目标 30 FPS。
 
-当前提供内置动态场景、独立全局视图、三路 1280×720 RGB/深度输出、暂停/继续、重置、全局视角鼠标旋转缩放，以及后台和桌面基准。现在也提供 Python 相机标定、独立分辨率/裁剪设置及带采样标识的 RGB/深度/真值接口。已支持 MJCF/URDF 打开、带位姿追加及 package:// 资源映射，详见 [模型导入说明](docs/model-import.md)。完整编辑器、桌面相机参数面板、项目保存和外部算法订阅服务尚未实现。
+通过 `from camera_lab import CameraLab` 可不启动界面直接导入场景、配置相机、步进和采样；详见 [Python SDK](docs/python-sdk.md)。核心安装不需要 Qt，桌面为可选组件。本轮重构的回归结果见 [SDK 验证报告](reports/python-sdk-verification.md)。
+
+Python 进程内数据接口提供同步观测、独立真值、按帧位姿误差评估及带有效期的执行器控制。真实视觉算法、视觉定位与机器人策略在后续阶段接入。
+
+从 [使用指南](docs/user-guide.md) 开始；已有场景可直接打开 `examples/projects/table-robot.camproj`。测量结果与未验证范围见 [第一阶段验收](reports/acceptance.md)。
 
 ## 当前工作区直接启动
 
@@ -21,7 +25,7 @@ Ubuntu 本地桌面多相机平台的第一个交付物：可运行的渲染验�
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e '.[test]'
+python -m pip install -e '.[desktop,test]'
 MUJOCO_GL=egl camera-lab
 ```
 
@@ -59,10 +63,23 @@ MUJOCO_GL=egl QT_QPA_PLATFORM=offscreen pytest -q
 
 ## 实现边界
 
-本版本的仿真与渲染都在同一个工作线程，保证一批图像来自同一状态。UI 只接收不可变批次，使用容量为一的最新帧邮箱，慢 UI 不造成无限内存积压。后续正式平台会将物理仿真拆成独立服务，并引入完整快照和版本化接口。
+本版本的仿真与渲染都在同一个工作线程，保证一批图像来自同一状态。UI 只接收不可变批次，使用容量为一的最新帧邮箱，慢 UI 不造成无限内存积压。当前已有内存快照和版本化接口；是否拆分物理服务或增加跨进程通信，留待后续算法与策略集成需求明确后决定。
 
 基准场景包含地面、桌面、三个彩色刚体和受控摆杆；其性能不能直接外推到任意复杂机器人场景。
 
 ## 相机数据接口
 
 详细字段、坐标约定与配置方法见 [相机观测与真实位姿接口](docs/camera-data-api.md)。运行 `python examples/capture_calibrated.py` 可导出三路同步样本。
+
+## 复现综合验收
+
+在仓库根目录、已安装依赖的环境中执行：
+
+```bash
+MUJOCO_GL=egl python benchmarks/desktop_acceptance.py --benchmark --seconds 60 --report reports/robot-desktop.json
+MUJOCO_GL=egl python benchmarks/desktop_acceptance.py --seconds 1800 --reload-every 60 --report reports/soak.json
+```
+
+第一条对随仓库提供的简单机器人项目测量；第二条显示三路 720p，连续运行 30 分钟并周期重新打开项目，记录 RSS、GPU 显存和运行进度。专用测试窗口禁用编辑输入；提前关闭会判为未完成。吞吐测试应与其他渲染测试分开执行。提前关闭窗口、加载失败或进度停止不算验收通过。
+
+本机使用 `.runtime` 时，先设置 `PYTHONPATH=src:.runtime/python-deps`、`LD_LIBRARY_PATH=.runtime/system-libs/usr/lib/x86_64-linux-gnu`；新机器推荐使用上面的虚拟环境安装方式。
