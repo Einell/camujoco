@@ -22,6 +22,11 @@ class Scene:
         return self._lab._call('model', dict(path=str(path), append=append,
             position=tuple(position), quaternion=tuple(rotation), packages=dict(packages or {})))
 
+    def attach(self, path, *, parent, position=(0,0,0), rotation=(1,0,0,0), packages=None):
+        """Attach a fixed-root model beneath a parent body, in parent coordinates."""
+        return self._lab._call('model', dict(path=str(path), append=True, parent=parent,
+            position=tuple(position), quaternion=tuple(rotation), packages=dict(packages or {})))
+
     def set_pose(self, name, *, position, rotation=(1,0,0,0)):
         """Edit body initial pose, pausing and resetting the entire simulation."""
         return self._lab._call('edit_body', dict(name=name, position=tuple(position), rotation=tuple(rotation)))
@@ -107,6 +112,15 @@ class CameraLab:
 
     def save_initial(self):
         return self._call('save_initial')
+
+    def state(self):
+        """Copied qpos/qvel and joint addresses for deterministic replay."""
+        return self._call('state')
+
+    def seek(self, *, qpos, time_s=0., qvel=None):
+        """Set a kinematic sample, pause, invalidate old controls; no physics step."""
+        return self._call('seek', dict(qpos=tuple(qpos),time_s=time_s,
+            qvel=None if qvel is None else tuple(qvel)))
 
     def capture(self):
         """Capture observations without advancing physics in manual mode."""

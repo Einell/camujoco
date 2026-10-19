@@ -114,7 +114,7 @@ class SceneProject:
         except Exception as exc:
             raise ImportFailure(f'{path}: {exc}') from exc
 
-    def append(self,path,position=(0,0,0),quaternion=(1,0,0,0),packages=None):
+    def append(self,path,position=(0,0,0),quaternion=(1,0,0,0),packages=None,parent="world"):
         try:
             position=np.asarray(position,dtype=float);quaternion=np.asarray(quaternion,dtype=float)
             if position.shape!=(3,) or quaternion.shape!=(4,) or not np.isfinite(position).all() or not np.isfinite(quaternion).all() or np.linalg.norm(quaternion)<1e-12:
@@ -135,7 +135,11 @@ class SceneProject:
                     continue
                 if not np.array_equal(getattr(candidate.option,key),getattr(child.option,key)):
                     warnings.append(f'Append keeps current global {key}; imported setting is ignored.')
-            frame=candidate.worldbody.add_frame(pos=position,quat=quaternion)
+            parent_body=candidate.worldbody if parent=='world' else candidate.body(parent)
+            if parent_body is None:raise ValueError(f'Unknown attachment parent: {parent}')
+            if parent!='world' and any(j.type==mujoco.mjtJoint.mjJNT_FREE for j in child.joints):
+                raise ValueError('Attached model must have a fixed root (remove its free joint)')
+            frame=parent_body.add_frame(pos=position,quat=quaternion)
             candidate.copy_during_attach=True
             candidate.attach(child,prefix=prefix,frame=frame)
             compiled=candidate.compile()

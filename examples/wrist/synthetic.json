@@ -1,0 +1,503 @@
+{
+  "model": "synthetic.xml",
+  "width": 320,
+  "height": 240,
+  "description": "Synthetic software fixture only, not Revo3 or a real task trajectory",
+  "candidates": [
+    {
+      "name": "palm-e0-near",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        -0.08,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.09853761796664216,
+        0.9951333266680701
+      ]
+    },
+    {
+      "name": "palm-e0-mid",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        -0.08,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.08598908413375944,
+        0.9962960791902361
+      ]
+    },
+    {
+      "name": "palm-e0-far",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        -0.08,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.07625058147116921,
+        0.997088686539622
+      ]
+    },
+    {
+      "name": "palm-e1-near",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        -0.1,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.12218326369570447,
+        0.992507556682903
+      ]
+    },
+    {
+      "name": "palm-e1-mid",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        -0.1,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.10682611122099099,
+        0.9942777187292293
+      ]
+    },
+    {
+      "name": "palm-e1-far",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        -0.1,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.094851338997804,
+        0.9954914482256106
+      ]
+    },
+    {
+      "name": "thumb-e0-near",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.08,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        -0.09853761796664216,
+        0.0,
+        0.9951333266680702
+      ]
+    },
+    {
+      "name": "thumb-e0-mid",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.08,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        -0.08598908413375944,
+        0.0,
+        0.9962960791902361
+      ]
+    },
+    {
+      "name": "thumb-e0-far",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.08,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        -0.07625058147116921,
+        0.0,
+        0.997088686539622
+      ]
+    },
+    {
+      "name": "thumb-e1-near",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.1,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        -0.12218326369570447,
+        0.0,
+        0.992507556682903
+      ]
+    },
+    {
+      "name": "thumb-e1-mid",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.1,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        -0.10682611122099099,
+        0.0,
+        0.9942777187292293
+      ]
+    },
+    {
+      "name": "thumb-e1-far",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.1,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        -0.094851338997804,
+        0.0,
+        0.9954914482256106
+      ]
+    },
+    {
+      "name": "little-e0-near",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        -0.08,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.09853761796664216,
+        0.0,
+        0.9951333266680702
+      ]
+    },
+    {
+      "name": "little-e0-mid",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        -0.08,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.08598908413375944,
+        0.0,
+        0.9962960791902361
+      ]
+    },
+    {
+      "name": "little-e0-far",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        -0.08,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.07625058147116921,
+        0.0,
+        0.997088686539622
+      ]
+    },
+    {
+      "name": "little-e1-near",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        -0.1,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.12218326369570447,
+        0.0,
+        0.992507556682903
+      ]
+    },
+    {
+      "name": "little-e1-mid",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        -0.1,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.10682611122099099,
+        0.0,
+        0.9942777187292293
+      ]
+    },
+    {
+      "name": "little-e1-far",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        -0.1,
+        0.0,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.094851338997804,
+        0.0,
+        0.9954914482256106
+      ]
+    },
+    {
+      "name": "back-e0-near",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        0.08,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -0.09853761796664216,
+        0.9951333266680701
+      ]
+    },
+    {
+      "name": "back-e0-mid",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        0.08,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -0.08598908413375944,
+        0.9962960791902361
+      ]
+    },
+    {
+      "name": "back-e0-far",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        0.08,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -0.07625058147116921,
+        0.997088686539622
+      ]
+    },
+    {
+      "name": "back-e1-near",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        0.1,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -0.12218326369570447,
+        0.992507556682903
+      ]
+    },
+    {
+      "name": "back-e1-mid",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        0.1,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -0.10682611122099099,
+        0.9942777187292293
+      ]
+    },
+    {
+      "name": "back-e1-far",
+      "camera": "wrist_camera",
+      "parent": "wrist",
+      "position": [
+        0.0,
+        0.1,
+        0.04
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -0.094851338997804,
+        0.9954914482256106
+      ]
+    }
+  ],
+  "features": [
+    {
+      "name": "face_left",
+      "body": "target",
+      "point": [
+        -0.015,
+        0,
+        -0.04
+      ],
+      "diameter_m": 0.005
+    },
+    {
+      "name": "face_right",
+      "body": "target",
+      "point": [
+        0.015,
+        0,
+        -0.04
+      ],
+      "diameter_m": 0.005
+    }
+  ],
+  "thresholds": {
+    "min_range_m": 0.05,
+    "max_range_m": 1.0,
+    "min_pixels": 1.0,
+    "tolerance_m": 0.002
+  },
+  "samples": [
+    {
+      "time_s": 0.0,
+      "duration_s": 0.03333333333333333,
+      "phase": "open",
+      "qpos": [
+        -0.16,
+        0
+      ]
+    },
+    {
+      "time_s": 0.03333333333333333,
+      "duration_s": 0.03333333333333333,
+      "phase": "open",
+      "qpos": [
+        -0.12,
+        0
+      ]
+    },
+    {
+      "time_s": 0.06666666666666667,
+      "duration_s": 0.03333333333333333,
+      "phase": "open",
+      "qpos": [
+        -0.08,
+        0
+      ]
+    },
+    {
+      "time_s": 0.1,
+      "duration_s": 0.03333333333333333,
+      "phase": "occlude",
+      "qpos": [
+        -0.04,
+        -0.2
+      ]
+    },
+    {
+      "time_s": 0.13333333333333333,
+      "duration_s": 0.03333333333333333,
+      "phase": "occlude",
+      "qpos": [
+        0.0,
+        -0.2
+      ]
+    },
+    {
+      "time_s": 0.16666666666666666,
+      "duration_s": 0.03333333333333333,
+      "phase": "occlude",
+      "qpos": [
+        0.04,
+        -0.2
+      ]
+    },
+    {
+      "time_s": 0.2,
+      "duration_s": 0.03333333333333333,
+      "phase": "release",
+      "qpos": [
+        0.08,
+        0
+      ]
+    },
+    {
+      "time_s": 0.23333333333333334,
+      "duration_s": 0.03333333333333333,
+      "phase": "release",
+      "qpos": [
+        0.12,
+        0
+      ]
+    },
+    {
+      "time_s": 0.26666666666666666,
+      "duration_s": 0.03333333333333333,
+      "phase": "release",
+      "qpos": [
+        0.16,
+        0
+      ]
+    }
+  ]
+}

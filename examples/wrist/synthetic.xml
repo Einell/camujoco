@@ -1,0 +1,17 @@
+<mujoco model="synthetic visibility fixture - NOT Revo3">
+  <option gravity="0 0 0"/>
+  <visual><global offwidth="640" offheight="480"/></visual>
+  <worldbody>
+    <light pos="0 -1 1" dir="0 1 -1"/>
+    <body name="wrist">
+      <joint name="wrist_rotation" axis="0 0 1" range="-60 60"/>
+      <geom type="box" size=".04 .04 .02" rgba=".3 .4 .5 1"/>
+      <camera name="wrist_camera" pos="0 -.1 .06"/>
+      <body name="occluder" pos=".2 0 .3">
+        <joint name="finger_slide" type="slide" axis="1 0 0" range="-.4 .2"/>
+        <geom type="box" size=".06 .09 .02" rgba=".4 .6 .7 1"/>
+      </body>
+    </body>
+    <body name="target" pos="0 0 .5"><geom type="box" size=".04 .04 .04" rgba=".95 .25 .1 1"/></body>
+  </worldbody>
+</mujoco>
