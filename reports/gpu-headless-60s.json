@@ -1,0 +1,235 @@
+{
+  "platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.35",
+  "python": "3.10.12",
+  "versions": {
+    "mujoco": "3.6.0",
+    "numpy": "2.2.6",
+    "PySide6-Essentials": null
+  },
+  "mujoco_gl": "egl",
+  "qt_platform": "desktop",
+  "batches": 1800,
+  "wall_seconds": 60.000136843000064,
+  "per_camera_fps": 29.999931578656017,
+  "render_p95_ms": 27.21665975011547,
+  "render_mean_ms": 24.01590859555439,
+  "simulated_seconds": 59.968000000027324,
+  "real_time_factor": 0.9994643871720355,
+  "peak_rss_mib": 305.51171875,
+  "mode": "headless_with_overview_render",
+  "desktop_visible": false,
+  "gl_renderer": "NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2",
+  "width": 1280,
+  "height": 720,
+  "cameras": 3,
+  "rgb_and_depth": true,
+  "target_fps": 30,
+  "warmup_seconds": 10.0,
+  "process_cpu_percent": 76.94115040903581,
+  "gpu_samples": [
+    {
+      "wall_seconds": 0.01666852099992866,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "37",
+          "733"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 5.023379019000004,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "36",
+          "720"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 10.025049072000002,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "37",
+          "720"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 15.027320720000034,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "40",
+          "721"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 20.061718001999907,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "38",
+          "721"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 25.090012161999994,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "35",
+          "721"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 30.09088279499997,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "38",
+          "721"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 35.091717378999874,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "40",
+          "721"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 40.12716139200006,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "38",
+          "721"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 45.12737055799994,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "38",
+          "721"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 50.15682608499992,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "40",
+          "721"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 55.157916462,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "37",
+          "721"
+        ]
+      ]
+    }
+  ]
+}

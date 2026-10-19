@@ -1,0 +1,20 @@
+# Tested Python 3.10 Linux environment, including tests.
+absl-py==2.4.0
+etils==1.13.0
+glfw==2.10.0
+mujoco==3.6.0
+numpy==2.2.6
+PyOpenGL==3.1.10
+PySide6_Essentials==6.8.3
+pytest==6.2.5
+shiboken6==6.8.3
+attrs==21.2.0
+iniconfig==1.1.1
+packaging==26.2
+pluggy==0.13.0
+py==1.10.0
+toml==0.10.2
+fsspec==2026.2.0
+importlib_resources==6.5.2
+typing_extensions==4.15.0
+zipp==1.0.0

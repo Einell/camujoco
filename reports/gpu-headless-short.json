@@ -1,0 +1,65 @@
+{
+  "platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.35",
+  "python": "3.10.12",
+  "versions": {
+    "mujoco": "3.6.0",
+    "numpy": "2.2.6",
+    "PySide6-Essentials": null
+  },
+  "mujoco_gl": "egl",
+  "qt_platform": "desktop",
+  "batches": 300,
+  "wall_seconds": 10.00012803300001,
+  "per_camera_fps": 29.999615905917643,
+  "render_p95_ms": 26.259813199897053,
+  "render_mean_ms": 21.49534449332653,
+  "simulated_seconds": 9.967999999999998,
+  "real_time_factor": 0.9967872378339566,
+  "peak_rss_mib": 266.15625,
+  "mode": "headless_with_overview_render",
+  "desktop_visible": false,
+  "gl_renderer": "NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2",
+  "width": 1280,
+  "height": 720,
+  "cameras": 3,
+  "rgb_and_depth": true,
+  "target_fps": 30,
+  "warmup_seconds": 2.0,
+  "process_cpu_percent": 69.4935194236227,
+  "gpu_samples": [
+    {
+      "wall_seconds": 0.018644082000037088,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "29",
+          "713"
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 5.023028567999972,
+      "columns": [
+        "name",
+        "driver",
+        "utilization_percent",
+        "memory_mib"
+      ],
+      "rows": [
+        [
+          "NVIDIA GeForce RTX 4060 Laptop GPU",
+          "590.48.01",
+          "35",
+          "708"
+        ]
+      ]
+    }
+  ]
+}

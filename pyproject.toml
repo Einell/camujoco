@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mujoco-camera-lab"
+version = "0.1.0"
+description = "MuJoCo three-camera rendering baseline"
+requires-python = ">=3.10"
+dependencies = ["mujoco==3.6.0", "numpy==2.2.6", "PySide6-Essentials==6.8.3"]
+
+[project.optional-dependencies]
+test = ["pytest>=6.2.5,<9"]
+
+[project.scripts]
+camera-lab = "camera_lab.app:main"
+camera-lab-benchmark = "camera_lab.benchmark:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+camera_lab = ["*.xml"]

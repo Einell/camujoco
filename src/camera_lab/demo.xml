@@ -1,0 +1,25 @@
+<mujoco model="camera_lab_demo">
+  <option timestep="0.002"/>
+  <visual><global offwidth="1280" offheight="720"/><quality offsamples="4"/><map znear="0.01" zfar="15"/></visual>
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" rgb1=".16 .20 .24" rgb2=".24 .29 .34" width="256" height="256"/>
+    <material name="floor" texture="grid" texrepeat="6 6" reflectance=".08"/>
+  </asset>
+  <worldbody>
+    <light pos="0 -2 4" dir="0 .3 -1" diffuse=".8 .8 .8"/>
+    <light pos="2 2 3" dir="-.4 -.4 -1" diffuse=".4 .4 .4"/>
+    <geom name="floor" type="plane" size="4 4 .1" material="floor"/>
+    <geom name="table" type="box" pos="0 0 .65" size=".8 .55 .05" rgba=".4 .45 .5 1"/>
+    <body name="red_box" pos="-.4 0 .85"><freejoint/><geom type="box" size=".12 .12 .15" rgba=".9 .2 .18 1"/></body>
+    <body name="blue_ball" pos="0 .15 .83"><freejoint/><geom type="sphere" size=".13" rgba=".2 .5 .95 1"/></body>
+    <body name="green_cylinder" pos=".4 .1 .83"><freejoint/><geom type="cylinder" size=".11 .13" rgba=".2 .8 .45 1"/></body>
+    <body name="pendulum" pos="0 -.25 1.65">
+      <joint name="swing" type="hinge" axis="0 1 0" damping=".2"/>
+      <geom type="capsule" fromto="0 0 0 0 0 -.55" size=".035" rgba="1 .65 .1 1"/>
+    </body>
+    <camera name="front" pos="0 -2.8 1.8" xyaxes="1 0 0 0 .32 .95" fovy="45"/>
+    <camera name="side" pos="2.6 -.6 1.6" xyaxes=".225 .974 0 -.27 .062 .96" fovy="45"/>
+    <camera name="top" pos="0 0 3.5" xyaxes="1 0 0 0 1 0" fovy="45"/>
+  </worldbody>
+  <actuator><position name="swing_control" joint="swing" kp="8" ctrlrange="-.7 .7"/></actuator>
+</mujoco>
