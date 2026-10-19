@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/home/book/Projects/camera-lab/benchmarks/desktop_acceptance.py", line 105, in <module>
+    if __name__=='__main__':main()
+  File "/home/book/Projects/camera-lab/benchmarks/desktop_acceptance.py", line 45, in main
+    raise RuntimeError(window.worker.error or state['error'])
+RuntimeError: Requested project did not load and start within 20 seconds
