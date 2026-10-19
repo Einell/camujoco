@@ -208,3 +208,15 @@ assert 'mujoco' not in sys.modules, 'Contract-only users must not initialize a r
 assert 'PySide6' not in sys.modules
 '''
     subprocess.run([sys.executable,'-c',script],check=True,env=os.environ.copy(),timeout=10)
+
+
+def test_sdk_module_evaluates_without_qt():
+    from camera_lab.modules import FixedPoseEstimator
+    with CameraLab(width=80,height=60) as lab:
+        lab.modules.register('demo',lambda:FixedPoseEstimator(object_id='red_box'))
+        result=lab.modules.subscribe_results()
+        lab.modules.start('demo');lab.capture()
+        until=time.monotonic()+5
+        while lab.modules.status('demo').processed==0 and time.monotonic()<until:time.sleep(.01)
+        assert result.get_nowait().errors[0].status=='matched'
+    assert lab.modules.status('demo').state=='stopped'

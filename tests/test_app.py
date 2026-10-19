@@ -281,3 +281,20 @@ def test_camera_navigation_preserves_running_and_paused_modes():
         window.close()
         wait_until(lambda:not window.worker.is_alive())
         app.processEvents()
+
+
+def test_algorithm_panel_runs_demo():
+    app=QApplication.instance() or QApplication([])
+    window=Window(width=80,height=60)
+    try:
+        window.module_panel.start_selected()
+        until=time.monotonic()+10
+        while 'translation' not in window.module_panel.result.text() and time.monotonic()<until:
+            app.processEvents();time.sleep(.01)
+        assert 'translation' in window.module_panel.result.text()
+        assert window.worker.error is None
+    finally:
+        window.close()
+        for _ in range(500):
+            app.processEvents();time.sleep(.005)
+            if not window.worker.is_alive():break
