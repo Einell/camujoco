@@ -183,3 +183,68 @@ def test_save_and_open_project_restores_ui_and_paused_scene(tmp_path):
         window.close()
         wait_until(lambda:not window.worker.is_alive())
         app.processEvents()
+
+
+def test_window_publishes_streams_and_accepts_control():
+    from camera_lab.api.streams import DataAPI
+    from camera_lab.contracts import ControlCommand
+    from queue import Empty
+    api=DataAPI();images=api.subscribe_observations();truth=api.subscribe_truth();results=api.subscribe_control_results()
+    app=QApplication.instance() or QApplication([])
+    window=Window(width=160,height=90,api=api)
+    window.show()
+    def wait_until(predicate):
+        until=time.monotonic()+15
+        while not predicate() and time.monotonic()<until:
+            app.processEvents();time.sleep(.01)
+        assert predicate(),window.worker.error
+    try:
+        window.return_edit.click()
+        wait_until(lambda:window.last_batch is not None and window.mode.text()=='Mode: edit')
+        stamp=window.last_batch.stamp
+        api.submit_control(ControlCommand(stamp.run_id,stamp.model_revision,0,100,time.monotonic_ns()+2_000_000_000,{'swing_control':.2}))
+        received=[]
+        def result_ready():
+            try:received.append(results.get_nowait())
+            except Empty:pass
+            return bool(received)
+        wait_until(result_ready)
+        assert received[0].accepted
+        window.step.click()
+        wait_until(lambda:window.last_batch.stamp.step_index==1)
+        assert images.get_nowait().stamp.run_id==stamp.run_id
+        assert truth.get_nowait().stamp.run_id==stamp.run_id
+    finally:
+        window.close();wait_until(lambda:not window.worker.is_alive());app.processEvents()
+        assert api.closed and images.closed and truth.closed
+
+
+def test_control_submitted_before_single_step_is_not_skipped():
+    from pathlib import Path
+    from queue import Empty
+    from camera_lab.app import Worker
+    from camera_lab.api import DataAPI
+    from camera_lab.contracts import ControlCommand
+    api=DataAPI();images=api.subscribe_observations();results=api.subscribe_control_results()
+    source=Path(__file__).resolve().parents[1]/'src/camera_lab/demo.xml'
+    worker=Worker(80,60,2,model=source,api=api);worker.start()
+    def take(sub):
+        end=time.monotonic()+15
+        while time.monotonic()<end:
+            try:return sub.get_nowait()
+            except Empty:time.sleep(.005)
+        raise AssertionError(worker.error)
+    try:
+        stamp=take(images).stamp
+        api.submit_control(ControlCommand(stamp.run_id,stamp.model_revision,0,3,time.monotonic_ns()+5_000_000_000,{'swing_control':.2}))
+        worker.commands.put(('step',None))
+        assert take(results).accepted
+        for _ in range(10):
+            frame=take(images)
+            assert frame.stamp.run_id==stamp.run_id
+            assert frame.stamp.step_index<=1
+            if frame.stamp.step_index==1:break
+        else:raise AssertionError('Single-step frame was not published')
+    finally:
+        worker.stop.set();worker.join(15)
+        assert not worker.is_alive()

@@ -44,6 +44,7 @@ class RenderSession(Editing):
             raise ValueError('Positive dimensions and 1–3 cameras are required')
         self._owner = get_ident()
         self._body_edits = {}
+        self._controls = None
         self._camera_edits = set()
         self.show_frustums = False
         if project is not None and (xml is not None or cameras is not None):
@@ -122,22 +123,32 @@ class RenderSession(Editing):
     def advance_to(self, sim_time):
         self._check()
         while self.data.time + 1e-12 < sim_time:
-            if self._demo_motion and self.model.nu:
+            controlled=self._controls.apply() if self._controls is not None else False
+            if not controlled and self._demo_motion and self.model.nu:
                 self.data.ctrl[0] = .6 * math.sin(2 * math.pi * .6 * self.data.time)
             mujoco.mj_step(self.model, self.data)
             self.step_index += 1
         # mj_step leaves position-derived fields from the previous integration.
         mujoco.mj_forward(self.model, self.data)
 
+    def submit_control(self,command):
+        self._check()
+        if self._controls is None:
+            from ..api.control import ControlScheduler
+            self._controls=ControlScheduler(self)
+        self._controls.submit(command)
+
     def reset(self):
         self._check()
         self.run_id = str(uuid4())
         self.step_index = 0
         self.sequence = 0
+        if self._controls is not None:self._controls.clear()
         mujoco.mj_resetData(self.model, self.data)
         self.data.qpos[:]=self._initial_qpos
         self.data.mocap_pos[:]=self._initial_mocap_pos
         self.data.mocap_quat[:]=self._initial_mocap_quat
+        if self._controls is not None:self._controls.apply()
         mujoco.mj_forward(self.model, self.data)
 
     def single_step(self):

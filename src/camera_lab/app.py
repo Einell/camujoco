@@ -19,12 +19,14 @@ from .ui.editor import Editor
 from .ui.preview import PreviewPanel
 from .sim.engine import Simulation,Mode
 from .project.store import save_project,load_project
+from .api.streams import DataAPI
 
 
 class Worker(Thread):
-    def __init__(self, width, height, fps, model=None, packages=None):
+    def __init__(self, width, height, fps, model=None, packages=None, api=None):
         super().__init__(name='mujoco-render', daemon=False)
         self.width, self.height, self.fps = width, height, fps
+        self.api=api if api is not None else DataAPI()
         self.initial_model = model
         self.packages = dict(packages or {})
         self.events = SimpleQueue()
@@ -67,6 +69,9 @@ class Worker(Thread):
                     elif command == 'frustums':
                         session.show_frustums=payload
                     elif command in ('reset','step','edit','save_initial'):
+                        if command=='step':
+                            self.api.bind(session)
+                            self.api.drain_controls(session)
                         before=float(session.data.time)
                         simulation.transition(command)
                         if command=='step':manual_seconds+=float(session.data.time)-before
@@ -142,9 +147,12 @@ class Worker(Thread):
                             self.events.put({'scene':session.scene_description()})
                             if command=='open_project':self.events.put({'layout':layout,'frustums':session.show_frustums})
                         previous = perf_counter()
+                self.api.bind(session)
+                self.api.drain_controls(session)
                 before_step = session.data.time
                 simulation.advance(delta)
-                batch = session.capture()
+                batch,truth = session.capture_sample()
+                self.api.publish(batch,truth)
                 self.measurement.add(batch.render_ms,session.data.time-before_step+manual_seconds)
                 self.mailbox.put(batch)
                 self.rendered += 1
@@ -152,6 +160,7 @@ class Worker(Thread):
         except Exception as exc:
             self.error = f'{type(exc).__name__}: {exc}'
         finally:
+            self.api.close()
             if session is not None:
                 session.close()
 
@@ -203,14 +212,15 @@ def depth_preview(depth):
 
 class Window(QMainWindow):
     def __init__(self, width=1280, height=720, fps=30, seconds=0, warmup=10,
-                 report=None, screenshot=None, model=None, packages=None):
+                 report=None, screenshot=None, model=None, packages=None, api=None):
         super().__init__()
         self.setWindowTitle('MuJoCo Camera Lab')
         self.resize(1280, 850)
         self.width_px, self.height_px = width, height
         self.seconds, self.warmup, self.report, self.screenshot = seconds, warmup, report, screenshot
         self.packages = dict(packages or {})
-        self.worker = Worker(width,height,fps,model,self.packages)
+        self.worker = Worker(width,height,fps,model,self.packages,api)
+        self.api=self.worker.api
         self.last_batch = None
         self.first_frame_at = None
         self.measure_start = None

@@ -32,7 +32,7 @@ with RenderSession() as renderer:
     simulation.transition('pause')
 ```
 
-可为 transition 传入 expected_run_id；运行标识改变后带旧标识的命令会被拒绝。桌面本地按钮使用同一线程 FIFO，外部控制入口将在后续阶段增加强制版本校验。
+可为 transition 传入 expected_run_id；运行标识改变后带旧标识的命令会被拒绝。桌面本地按钮使用同一线程 FIFO，外部执行器控制入口已使用强制版本校验，见 [控制接口](data-control-api.md)。
 
 ## 内存快照
 
