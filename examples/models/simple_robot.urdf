@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<robot name="simple_robot">
+  <link name="base">
+    <visual><origin xyz="0 0 .1"/><geometry><box size=".4 .3 .2"/></geometry><material name="blue"><color rgba=".15 .4 .85 1"/></material></visual>
+    <collision><origin xyz="0 0 .1"/><geometry><box size=".4 .3 .2"/></geometry></collision>
+  </link>
+  <link name="arm">
+    <inertial><origin xyz="0 0 .3"/><mass value="1"/><inertia ixx=".04" ixy="0" ixz="0" iyy=".04" iyz="0" izz=".005"/></inertial>
+    <visual><origin xyz="0 0 .3"/><geometry><cylinder radius=".05" length=".6"/></geometry><material name="orange"><color rgba="1 .5 .1 1"/></material></visual>
+    <collision><origin xyz="0 0 .3"/><geometry><cylinder radius=".05" length=".6"/></geometry></collision>
+  </link>
+  <joint name="shoulder" type="revolute">
+    <parent link="base"/><child link="arm"/><origin xyz="0 0 .2"/><axis xyz="0 1 0"/>
+    <limit lower="-1.5" upper="1.5" effort="10" velocity="2"/><dynamics damping=".1"/>
+  </joint>
+</robot>
