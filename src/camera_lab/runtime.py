@@ -177,7 +177,7 @@ class Worker(Thread):
                                     candidate,layout=load_project(payload['path'],revision=session.model_revision+1)
                                 elif payload['append']:
                                     candidate = project.append(payload['path'],payload['position'],
-                                                               payload['quaternion'],payload['packages'])
+                                                               payload['quaternion'],payload['packages'],parent=payload.get('parent','world'))
                                 else:
                                     candidate = SceneProject.open(payload['path'],payload['packages'],
                                                                   revision=session.model_revision+1)
@@ -206,6 +206,15 @@ class Worker(Thread):
                                 self.events.put({'scene':session.scene_description()})
                                 if command=='open_project':self.events.put({'layout':layout,'frustums':session.show_frustums})
                             previous = perf_counter()
+                        elif command == 'state':
+                            from .sim.replay import state
+                            result=state(session)
+                        elif command == 'seek':
+                            from .sim.replay import seek
+                            seek(session,**payload)
+                            simulation.transition('pause')
+                            delta=0
+                            self.events.put({'mode':simulation.mode.value})
                         elif command == 'capture':
                             self.api.bind(session)
                             self.api.drain_controls(session)

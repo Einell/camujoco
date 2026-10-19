@@ -1,0 +1,13 @@
+{
+  "hand": "Revo3 right",
+  "camera_count": 1,
+  "arm_model": null,
+  "camera_model": null,
+  "model": null,
+  "width": 1280,
+  "height": 720,
+  "candidates": [],
+  "features": [],
+  "samples": [],
+  "thresholds": {}
+}
